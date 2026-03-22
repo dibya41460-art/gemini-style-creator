@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Menu, X, Phone, MapPin, Search, ShoppingBag } from "lucide-react";
+import SearchOverlay from "@/components/SearchOverlay";
 
 const navLinks = [
   { label: "Home", href: "#hero" },
@@ -15,6 +16,7 @@ const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState("#hero");
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => {
@@ -32,6 +34,18 @@ const Header = () => {
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Ctrl+K / Cmd+K to open search
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
   }, []);
 
   return (
@@ -99,7 +113,10 @@ const Header = () => {
 
           {/* Icons */}
           <div className="flex items-center gap-4">
-            <button className="text-foreground/60 hover:text-primary transition-colors duration-300">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="text-foreground/60 hover:text-primary transition-colors duration-300"
+            >
               <Search className="w-5 h-5" />
             </button>
             <button className="relative text-foreground/60 hover:text-primary transition-colors duration-300">
@@ -142,6 +159,7 @@ const Header = () => {
           </ul>
         </div>
       </nav>
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
     </header>
   );
 };
