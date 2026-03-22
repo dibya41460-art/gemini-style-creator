@@ -1,20 +1,10 @@
-import diamondRing from "@/assets/diamond-ring.jpg";
-import diamondBracelet from "@/assets/diamond-bracelet.jpg";
-import diamondEarrings from "@/assets/diamond-earrings.jpg";
-import diamondPendant from "@/assets/diamond-pendant.jpg";
-import featured3 from "@/assets/featured-3.jpg";
-import featured4 from "@/assets/featured-4.jpg";
-
-const diamondProducts = [
-  { name: "Solitaire Ring", price: "₹1,85,000", carat: "1.2 ct", clarity: "VS1", image: diamondRing, tag: "Bestseller" },
-  { name: "Tennis Bracelet", price: "₹3,20,000", carat: "5.0 ct", clarity: "VS2", image: diamondBracelet, tag: "Premium" },
-  { name: "Princess Studs", price: "₹95,000", carat: "0.8 ct", clarity: "VVS2", image: diamondEarrings, tag: null },
-  { name: "Pear Drop Pendant", price: "₹1,45,000", carat: "1.5 ct", clarity: "VS1", image: diamondPendant, tag: "New" },
-  { name: "Eternity Band", price: "₹1,10,000", carat: "1.0 ct", clarity: "VS2", image: featured3, tag: null },
-  { name: "Diamond Mangalsutra", price: "₹78,000", carat: "0.5 ct", clarity: "VS1", image: featured4, tag: "Trending" },
-];
+import { useState } from "react";
+import { diamondProducts, type Product } from "@/data/products";
+import ProductDetailModal from "@/components/ProductDetailModal";
 
 const DiamondSection = () => {
+  const [selected, setSelected] = useState<Product | null>(null);
+
   return (
     <section id="diamond" className="py-20 bg-muted/30 scroll-mt-24">
       <div className="container mx-auto px-4">
@@ -33,9 +23,10 @@ const DiamondSection = () => {
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
           {diamondProducts.map((product) => (
-            <div
-              key={product.name}
-              className="group bg-card border border-border rounded-lg overflow-hidden hover:border-primary/40 transition-all duration-500"
+            <button
+              key={product.id}
+              onClick={() => setSelected(product)}
+              className="group bg-card border border-border rounded-lg overflow-hidden hover:border-primary/40 transition-all duration-500 text-left cursor-pointer"
             >
               <div className="relative aspect-square overflow-hidden">
                 <img
@@ -49,6 +40,11 @@ const DiamondSection = () => {
                     {product.tag}
                   </span>
                 )}
+                <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/10 transition-colors duration-500 flex items-center justify-center">
+                  <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-background/90 text-primary text-xs font-body font-semibold tracking-[0.15em] uppercase px-4 py-2 rounded-sm">
+                    View Details
+                  </span>
+                </div>
               </div>
               <div className="p-4 space-y-1">
                 <h3 className="font-display text-sm md:text-base font-semibold group-hover:text-primary transition-colors">
@@ -61,10 +57,12 @@ const DiamondSection = () => {
                 </div>
                 <p className="text-primary font-display text-base md:text-lg font-bold">{product.price}</p>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </div>
+
+      <ProductDetailModal product={selected} open={!!selected} onClose={() => setSelected(null)} />
     </section>
   );
 };

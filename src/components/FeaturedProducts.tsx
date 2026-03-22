@@ -1,16 +1,10 @@
-import featured1 from "@/assets/featured-1.jpg";
-import featured2 from "@/assets/featured-2.jpg";
-import featured3 from "@/assets/featured-3.jpg";
-import featured4 from "@/assets/featured-4.jpg";
-
-const products = [
-  { name: "Royal Bridal Set", price: "₹2,45,000", weight: "45.2 gm", image: featured1, tag: "Bestseller" },
-  { name: "Temple Choker", price: "₹1,85,000", weight: "38.6 gm", image: featured2, tag: "New Arrival" },
-  { name: "Diamond Pendant", price: "₹65,000", weight: "8.4 gm", image: featured3, tag: null },
-  { name: "Mangalsutra", price: "₹78,000", weight: "12.1 gm", image: featured4, tag: "Trending" },
-];
+import { useState } from "react";
+import { featuredProducts, type Product } from "@/data/products";
+import ProductDetailModal from "@/components/ProductDetailModal";
 
 const FeaturedProducts = () => {
+  const [selected, setSelected] = useState<Product | null>(null);
+
   return (
     <section className="py-20 bg-muted/30">
       <div className="container mx-auto px-4">
@@ -25,10 +19,11 @@ const FeaturedProducts = () => {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          {products.map((product) => (
-            <div
-              key={product.name}
-              className="group bg-card border border-border rounded-lg overflow-hidden hover:border-primary/40 transition-all duration-500"
+          {featuredProducts.map((product) => (
+            <button
+              key={product.id}
+              onClick={() => setSelected(product)}
+              className="group bg-card border border-border rounded-lg overflow-hidden hover:border-primary/40 transition-all duration-500 text-left cursor-pointer"
             >
               <div className="relative aspect-[4/5] overflow-hidden">
                 <img
@@ -42,6 +37,11 @@ const FeaturedProducts = () => {
                     {product.tag}
                   </span>
                 )}
+                <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/10 transition-colors duration-500 flex items-center justify-center">
+                  <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-background/90 text-primary text-xs font-body font-semibold tracking-[0.15em] uppercase px-4 py-2 rounded-sm">
+                    View Details
+                  </span>
+                </div>
               </div>
               <div className="p-4 space-y-1">
                 <h3 className="font-display text-base md:text-lg font-semibold group-hover:text-primary transition-colors">
@@ -50,10 +50,12 @@ const FeaturedProducts = () => {
                 <p className="text-muted-foreground text-xs font-body">{product.weight}</p>
                 <p className="text-primary font-display text-lg font-bold">{product.price}</p>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </div>
+
+      <ProductDetailModal product={selected} open={!!selected} onClose={() => setSelected(null)} />
     </section>
   );
 };
