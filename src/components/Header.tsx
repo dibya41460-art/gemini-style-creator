@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Menu, X, Phone, MapPin, Search, ShoppingBag } from "lucide-react";
+import SearchOverlay from "@/components/SearchOverlay";
 
 const navLinks = [
   { label: "Home", href: "#hero" },
