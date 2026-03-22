@@ -101,7 +101,10 @@ const Header = () => {
 
           {/* Icons */}
           <div className="flex items-center gap-4">
-            <button className="text-foreground/60 hover:text-primary transition-colors duration-300">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="text-foreground/60 hover:text-primary transition-colors duration-300"
+            >
               <Search className="w-5 h-5" />
             </button>
             <button className="relative text-foreground/60 hover:text-primary transition-colors duration-300">
