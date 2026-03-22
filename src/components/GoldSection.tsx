@@ -1,20 +1,10 @@
-import goldChain from "@/assets/gold-chain.jpg";
-import goldCoins from "@/assets/gold-coins.jpg";
-import goldAnklet from "@/assets/gold-anklet.jpg";
-import necklaceImg from "@/assets/category-necklace.jpg";
-import banglesImg from "@/assets/category-bangles.jpg";
-import ringsImg from "@/assets/category-rings.jpg";
-
-const goldProducts = [
-  { name: "Antique Gold Chain", price: "₹1,32,000", weight: "22.5 gm", purity: "22K", image: goldChain },
-  { name: "Gold Coins (10gm)", price: "₹68,200", weight: "10 gm", purity: "24K", image: goldCoins },
-  { name: "Bridal Anklet Pair", price: "₹45,000", weight: "18.2 gm", purity: "22K", image: goldAnklet },
-  { name: "Kundan Necklace Set", price: "₹2,10,000", weight: "42.8 gm", purity: "22K", image: necklaceImg },
-  { name: "Meenakari Bangles", price: "₹88,000", weight: "28.4 gm", purity: "22K", image: banglesImg },
-  { name: "Cocktail Gold Ring", price: "₹32,000", weight: "6.8 gm", purity: "18K", image: ringsImg },
-];
+import { useState } from "react";
+import { goldProducts, type Product } from "@/data/products";
+import ProductDetailModal from "@/components/ProductDetailModal";
 
 const GoldSection = () => {
+  const [selected, setSelected] = useState<Product | null>(null);
+
   return (
     <section id="gold" className="py-20 bg-background scroll-mt-24">
       <div className="container mx-auto px-4">
@@ -33,9 +23,10 @@ const GoldSection = () => {
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
           {goldProducts.map((product) => (
-            <div
-              key={product.name}
-              className="group bg-card border border-border rounded-lg overflow-hidden hover:border-primary/40 transition-all duration-500"
+            <button
+              key={product.id}
+              onClick={() => setSelected(product)}
+              className="group bg-card border border-border rounded-lg overflow-hidden hover:border-primary/40 transition-all duration-500 text-left cursor-pointer"
             >
               <div className="relative aspect-square overflow-hidden">
                 <img
@@ -47,6 +38,11 @@ const GoldSection = () => {
                 <span className="absolute top-3 right-3 bg-primary text-primary-foreground text-[10px] tracking-[0.1em] uppercase px-2 py-1 rounded-sm font-body font-bold">
                   {product.purity}
                 </span>
+                <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/10 transition-colors duration-500 flex items-center justify-center">
+                  <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-background/90 text-primary text-xs font-body font-semibold tracking-[0.15em] uppercase px-4 py-2 rounded-sm">
+                    View Details
+                  </span>
+                </div>
               </div>
               <div className="p-4 space-y-1">
                 <h3 className="font-display text-sm md:text-base font-semibold group-hover:text-primary transition-colors">
@@ -55,10 +51,12 @@ const GoldSection = () => {
                 <p className="text-muted-foreground text-xs font-body">{product.weight}</p>
                 <p className="text-primary font-display text-base md:text-lg font-bold">{product.price}</p>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </div>
+
+      <ProductDetailModal product={selected} open={!!selected} onClose={() => setSelected(null)} />
     </section>
   );
 };
