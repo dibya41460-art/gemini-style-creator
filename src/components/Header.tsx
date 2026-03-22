@@ -3,11 +3,11 @@ import { Menu, X, Phone, MapPin, Search, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const navLinks = [
-  { label: "Home", href: "#" },
+  { label: "Home", href: "#hero" },
   { label: "Collections", href: "#collections" },
-  { label: "Gold", href: "#" },
-  { label: "Diamond", href: "#" },
-  { label: "Bridal", href: "#" },
+  { label: "Gold", href: "#gold" },
+  { label: "Diamond", href: "#diamond" },
+  { label: "Bridal", href: "#bridal" },
   { label: "About", href: "#about" },
   { label: "Contact", href: "#contact" },
 ];
