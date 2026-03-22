@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 const BridalSection = () => {
   return (
-    <section className="py-20 bg-background">
+    <section id="bridal" className="py-20 bg-background scroll-mt-24">
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-2 gap-8 items-center">
           {/* Image side */}

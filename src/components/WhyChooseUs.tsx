@@ -9,7 +9,7 @@ const features = [
 
 const WhyChooseUs = () => {
   return (
-    <section className="py-20 bg-maroon-deep border-y border-border">
+    <section id="about" className="py-20 bg-maroon-deep border-y border-border scroll-mt-24">
       <div className="container mx-auto px-4">
         <div className="text-center mb-14">
           <p className="text-primary tracking-[0.4em] text-xs font-body font-semibold uppercase mb-3">
