@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Menu, X, Phone, MapPin, Search, ShoppingBag } from "lucide-react";
 import SearchOverlay from "@/components/SearchOverlay";
+import { SHOP_PHONE, SHOP_ADDRESS_SHORT } from "@/lib/shop";
 
 const navLinks = [
   { label: "Home", href: "#hero" },
@@ -59,10 +60,10 @@ const Header = () => {
         <div className="container mx-auto flex items-center justify-between py-1.5 px-4 text-xs tracking-widest">
           <div className="flex items-center gap-4 text-muted-foreground">
             <span className="flex items-center gap-1">
-              <Phone className="w-3 h-3" /> +91 98765 43210
+              <Phone className="w-3 h-3" /> {SHOP_PHONE}
             </span>
             <span className="hidden sm:flex items-center gap-1">
-              <MapPin className="w-3 h-3" /> Main Market, India
+              <MapPin className="w-3 h-3" /> {SHOP_ADDRESS_SHORT}
             </span>
           </div>
           <span className="text-primary font-body text-xs tracking-[0.2em]">
