@@ -2,8 +2,16 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { MapPin, Shield, Clock, Package, Phone } from "lucide-react";
+import { MapPin, Shield, Clock, Package, Phone, Calendar } from "lucide-react";
+import { toast } from "sonner";
 import type { Product } from "@/data/products";
+
+// Swastika Jewellers contact (demo number)
+const SHOP_PHONE = "+880 1712-345678";
+const SHOP_PHONE_TEL = "+8801712345678";
+
+const generateBookingId = () =>
+  "SJ-" + Math.floor(100000 + Math.random() * 900000);
 
 interface ProductDetailModalProps {
   product: Product | null;
