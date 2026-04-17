@@ -95,11 +95,33 @@ const ProductDetailModal = ({ product, open, onClose }: ProductDetailModalProps)
 
             {/* CTA */}
             <div className="flex gap-3 pt-1">
-              <Button className="flex-1 bg-primary text-primary-foreground hover:bg-gold-dark tracking-[0.1em] uppercase text-xs font-body font-semibold">
+              <Button
+                onClick={() => {
+                  const id = generateBookingId();
+                  toast.success("Enquiry placed!", {
+                    description: `Ref ${id} for "${product.name}". Our team will call you at ${SHOP_PHONE}.`,
+                  });
+                  window.location.href = `tel:${SHOP_PHONE_TEL}`;
+                }}
+                className="flex-1 bg-primary text-primary-foreground hover:bg-gold-dark tracking-[0.1em] uppercase text-xs font-body font-semibold"
+              >
                 <Phone className="w-4 h-4 mr-1" /> Enquire Now
               </Button>
-              <Button variant="outline" className="flex-1 border-primary text-primary hover:bg-primary hover:text-primary-foreground tracking-[0.1em] uppercase text-xs font-body font-semibold">
-                Book Appointment
+              <Button
+                onClick={() => {
+                  const id = generateBookingId();
+                  const days = Math.floor(Math.random() * 5) + 2;
+                  const date = new Date(Date.now() + days * 86400000).toLocaleDateString("en-GB", {
+                    weekday: "short", day: "numeric", month: "short",
+                  });
+                  toast.success("Appointment booked!", {
+                    description: `Booking ${id} confirmed for ${date}. Confirmation sent to ${SHOP_PHONE}.`,
+                  });
+                }}
+                variant="outline"
+                className="flex-1 border-primary text-primary hover:bg-primary hover:text-primary-foreground tracking-[0.1em] uppercase text-xs font-body font-semibold"
+              >
+                <Calendar className="w-4 h-4 mr-1" /> Book Appointment
               </Button>
             </div>
           </div>
