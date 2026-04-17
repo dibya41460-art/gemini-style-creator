@@ -66,7 +66,7 @@ const Header = () => {
             </span>
           </div>
           <span className="text-primary font-body text-xs tracking-[0.2em]">
-            FREE SHIPPING ON ORDERS ABOVE ₹50,000
+            FREE SHIPPING ON ORDERS ABOVE ৳50,000
           </span>
         </div>
       </div>

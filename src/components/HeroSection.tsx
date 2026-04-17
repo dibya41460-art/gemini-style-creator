@@ -46,8 +46,8 @@ const HeroSection = () => {
         <div className="container mx-auto px-4 flex items-center justify-between text-sm font-body">
           <div className="flex items-center gap-8">
             <span className="text-muted-foreground tracking-wider">TODAY'S GOLD RATE</span>
-            <span className="text-primary font-semibold">22K: ₹6,250/gm</span>
-            <span className="text-primary font-semibold hidden sm:inline">24K: ₹6,820/gm</span>
+            <span className="text-primary font-semibold">22K: ৳6,250/gm</span>
+            <span className="text-primary font-semibold hidden sm:inline">24K: ৳6,820/gm</span>
           </div>
           <span className="text-muted-foreground text-xs hidden md:inline">*Rates updated daily</span>
         </div>
