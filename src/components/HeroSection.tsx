@@ -1,7 +1,15 @@
+import { useState } from "react";
 import heroImg from "@/assets/hero-jewelry.jpg";
 import { Button } from "@/components/ui/button";
+import AppointmentDialog from "@/components/AppointmentDialog";
 
 const HeroSection = () => {
+  const [bookOpen, setBookOpen] = useState(false);
+
+  const scrollToCollections = () => {
+    document.getElementById("collections")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <section id="hero" className="relative min-h-screen flex items-center overflow-hidden scroll-mt-24">
       {/* Background image */}
@@ -31,10 +39,10 @@ const HeroSection = () => {
             Discover handcrafted jewelry that celebrates tradition, artistry, and the beauty of pure gold.
           </p>
           <div className="flex gap-4 opacity-0 animate-fade-in [animation-delay:600ms]">
-            <Button size="lg" className="bg-primary text-primary-foreground hover:bg-gold-dark tracking-[0.15em] uppercase text-sm font-body font-semibold px-8">
+            <Button onClick={scrollToCollections} size="lg" className="bg-primary text-primary-foreground hover:bg-gold-dark tracking-[0.15em] uppercase text-sm font-body font-semibold px-8">
               Explore Collection
             </Button>
-            <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground tracking-[0.15em] uppercase text-sm font-body font-semibold px-8">
+            <Button onClick={() => setBookOpen(true)} size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground tracking-[0.15em] uppercase text-sm font-body font-semibold px-8">
               Book Appointment
             </Button>
           </div>
@@ -52,6 +60,7 @@ const HeroSection = () => {
           <span className="text-muted-foreground text-xs hidden md:inline">*Rates updated daily</span>
         </div>
       </div>
+      <AppointmentDialog open={bookOpen} onClose={() => setBookOpen(false)} />
     </section>
   );
 };

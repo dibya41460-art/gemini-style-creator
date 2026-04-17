@@ -7,6 +7,7 @@ import DiamondSection from "@/components/DiamondSection";
 import BridalSection from "@/components/BridalSection";
 import WhyChooseUs from "@/components/WhyChooseUs";
 import Footer from "@/components/Footer";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 const Index = () => {
   return (
@@ -20,6 +21,7 @@ const Index = () => {
       <BridalSection />
       <WhyChooseUs />
       <Footer />
+      <WhatsAppButton />
     </div>
   );
 };
