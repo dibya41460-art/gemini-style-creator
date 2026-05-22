@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import ProductDetailModal from "@/components/ProductDetailModal";
 import AppointmentDialog from "@/components/AppointmentDialog";
 import { categories, type CategoryItem } from "@/data/categories";
+import { useProductOverrides, applyOverride } from "@/hooks/useProductOverrides";
 
 type SortMode = "featured" | "price-asc" | "price-desc" | "name";
 type TypeFilter = "all" | "Gold" | "Diamond";
@@ -26,6 +27,7 @@ const PRICE_RANGES: Record<PriceFilter, (v: number) => boolean> = {
 const CategoryPage = () => {
   const { slug } = useParams();
   const data = slug ? categories[slug] : undefined;
+  const overrides = useProductOverrides();
 
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [priceFilter, setPriceFilter] = useState<PriceFilter>("all");
@@ -42,7 +44,7 @@ const CategoryPage = () => {
 
   const filtered = useMemo(() => {
     if (!data) return [];
-    let list = data.items.filter(
+    let list = data.items.map((i) => applyOverride(i, overrides)).filter(
       (i) =>
         (typeFilter === "all" || i.type === typeFilter) &&
         PRICE_RANGES[priceFilter](i.priceValue)
@@ -51,7 +53,7 @@ const CategoryPage = () => {
     else if (sort === "price-desc") list = [...list].sort((a, b) => b.priceValue - a.priceValue);
     else if (sort === "name") list = [...list].sort((a, b) => a.name.localeCompare(b.name));
     return list;
-  }, [data, typeFilter, priceFilter, sort]);
+  }, [data, typeFilter, priceFilter, sort, overrides]);
 
   if (!data) return <Navigate to="/404" replace />;
 
