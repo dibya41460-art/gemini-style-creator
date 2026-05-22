@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { goldProducts, type Product } from "@/data/products";
 import ProductDetailModal from "@/components/ProductDetailModal";
+import { useProductOverrides, applyOverride } from "@/hooks/useProductOverrides";
 
 const GoldSection = () => {
+  const overrides = useProductOverrides();
+  const products = useMemo(() => goldProducts.map((p) => applyOverride(p, overrides)), [overrides]);
   const [selected, setSelected] = useState<Product | null>(null);
 
   return (
@@ -22,7 +25,7 @@ const GoldSection = () => {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-          {goldProducts.map((product) => (
+          {products.map((product) => (
             <button
               key={product.id}
               onClick={() => setSelected(product)}

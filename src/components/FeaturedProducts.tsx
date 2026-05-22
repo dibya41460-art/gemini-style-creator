@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { featuredProducts, type Product } from "@/data/products";
 import ProductDetailModal from "@/components/ProductDetailModal";
+import { useProductOverrides, applyOverride } from "@/hooks/useProductOverrides";
 
 const FeaturedProducts = () => {
+  const overrides = useProductOverrides();
+  const products = useMemo(() => featuredProducts.map((p) => applyOverride(p, overrides)), [overrides]);
   const [selected, setSelected] = useState<Product | null>(null);
 
   return (
@@ -19,7 +22,7 @@ const FeaturedProducts = () => {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          {featuredProducts.map((product) => (
+          {products.map((product) => (
             <button
               key={product.id}
               onClick={() => setSelected(product)}

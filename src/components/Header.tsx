@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Menu, X, Phone, MapPin, Search, ShoppingBag } from "lucide-react";
 import SearchOverlay from "@/components/SearchOverlay";
-import { SHOP_PHONE, SHOP_ADDRESS_SHORT } from "@/lib/shop";
+import { useShopSettings } from "@/hooks/useShopSettings";
 
 const navLinks = [
   { label: "Home", href: "#hero" },
@@ -14,6 +14,7 @@ const navLinks = [
 ];
 
 const Header = () => {
+  const shop = useShopSettings();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState("#hero");
@@ -60,10 +61,10 @@ const Header = () => {
         <div className="container mx-auto flex items-center justify-between py-1.5 px-4 text-xs tracking-widest">
           <div className="flex items-center gap-4 text-muted-foreground">
             <span className="flex items-center gap-1">
-              <Phone className="w-3 h-3" /> {SHOP_PHONE}
+              <Phone className="w-3 h-3" /> {shop.phone}
             </span>
             <span className="hidden sm:flex items-center gap-1">
-              <MapPin className="w-3 h-3" /> {SHOP_ADDRESS_SHORT}
+              <MapPin className="w-3 h-3" /> {shop.address_short}
             </span>
           </div>
           <span className="text-primary font-body text-xs tracking-[0.2em]">
@@ -84,10 +85,10 @@ const Header = () => {
           {/* Logo */}
           <a href="#hero" className="flex flex-col items-center group">
             <span className="font-display text-2xl md:text-3xl font-bold tracking-wider text-primary group-hover:text-gold-light transition-colors duration-300">
-              SWASTIKA
+              {shop.shop_name.toUpperCase()}
             </span>
             <span className="text-[10px] tracking-[0.4em] text-muted-foreground uppercase -mt-1">
-              Jewellers
+              {shop.shop_tagline}
             </span>
           </a>
 

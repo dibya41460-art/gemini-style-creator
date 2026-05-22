@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { MessageCircle, X } from "lucide-react";
 import AppointmentDialog from "@/components/AppointmentDialog";
-import { SHOP_PHONE_WA } from "@/lib/shop";
+import { useShopSettings } from "@/hooks/useShopSettings";
 
 const WhatsAppButton = () => {
+  const shop = useShopSettings();
   const [menuOpen, setMenuOpen] = useState(false);
   const [bookOpen, setBookOpen] = useState(false);
 
-  const waUrl = `https://wa.me/${SHOP_PHONE_WA}?text=${encodeURIComponent(
-    "Hello Swastika Jewellers, I'd like to know more about your collection."
+  const waUrl = `https://wa.me/${shop.whatsapp}?text=${encodeURIComponent(
+    `Hello ${shop.shop_name}, I'd like to know more about your collection.`
   )}`;
 
   return (
