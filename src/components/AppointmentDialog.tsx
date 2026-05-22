@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Calendar, CheckCircle2 } from "lucide-react";
-import { SHOP_PHONE } from "@/lib/shop";
+import { useShopSettings } from "@/hooks/useShopSettings";
 
 interface AppointmentDialogProps {
   open: boolean;
@@ -18,6 +18,7 @@ const generateBookingId = () =>
   "SJ-" + Math.floor(100000 + Math.random() * 900000);
 
 const AppointmentDialog = ({ open, onClose, productName }: AppointmentDialogProps) => {
+  const shop = useShopSettings();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [date, setDate] = useState("");
@@ -67,7 +68,7 @@ const AppointmentDialog = ({ open, onClose, productName }: AppointmentDialogProp
               <p className="text-sm font-body">{confirmed.date}</p>
               <p className="text-xs text-muted-foreground uppercase tracking-wider mt-2">Confirmation</p>
               <p className="text-sm font-body">SMS sent to {phone}</p>
-              <p className="text-xs text-muted-foreground mt-2">Our team will call you from {SHOP_PHONE}</p>
+                <p className="text-xs text-muted-foreground mt-2">Our team will call you from {shop.phone}</p>
             </div>
             <Button onClick={reset} className="w-full bg-primary text-primary-foreground hover:bg-gold-dark uppercase tracking-[0.15em] text-xs font-semibold">
               Done
