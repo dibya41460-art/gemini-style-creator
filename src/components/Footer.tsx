@@ -1,7 +1,8 @@
 import { Phone, Mail, MapPin, Clock } from "lucide-react";
-import { SHOP_PHONE, SHOP_ADDRESS } from "@/lib/shop";
+import { useShopSettings } from "@/hooks/useShopSettings";
 
 const Footer = () => {
+  const shop = useShopSettings();
   return (
     <footer id="contact" className="bg-card border-t border-border">
       <div className="container mx-auto px-4 py-16">
@@ -9,11 +10,11 @@ const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <div>
-              <span className="font-display text-2xl font-bold text-primary">SWASTIKA</span>
-              <p className="text-[10px] tracking-[0.4em] text-muted-foreground uppercase">Jewellers</p>
+              <span className="font-display text-2xl font-bold text-primary">{shop.shop_name.toUpperCase()}</span>
+              <p className="text-[10px] tracking-[0.4em] text-muted-foreground uppercase">{shop.shop_tagline}</p>
             </div>
             <p className="text-muted-foreground text-sm font-body leading-relaxed">
-              Crafting timeless gold jewelry with passion and precision since 1985. Every piece tells a story of tradition and elegance.
+              {shop.footer_about}
             </p>
           </div>
 
@@ -43,19 +44,19 @@ const Footer = () => {
             <ul className="space-y-3 text-sm font-body text-muted-foreground">
               <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                {SHOP_ADDRESS}
+                {shop.address}
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-primary shrink-0" />
-                {SHOP_PHONE}
+                {shop.phone}
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-primary shrink-0" />
-                info@swastikajewellers.com
+                {shop.email}
               </li>
               <li className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-primary shrink-0" />
-                Mon–Sat: 10AM – 8PM
+                {shop.hours}
               </li>
             </ul>
           </div>
@@ -65,7 +66,7 @@ const Footer = () => {
       {/* Bottom bar */}
       <div className="border-t border-border">
         <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between text-xs text-muted-foreground font-body">
-          <p>© 2025 Swastika Jewellers. All rights reserved.</p>
+          <p>© 2025 {shop.shop_name}. All rights reserved.</p>
           <p className="mt-1 md:mt-0">Crafted with ❤️ for lovers of fine jewelry</p>
         </div>
       </div>
