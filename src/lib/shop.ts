@@ -15,6 +15,9 @@ export const SHOP_DEFAULTS = {
   footer_about:
     "Crafting timeless gold jewelry with passion and precision since 1985. Every piece tells a story of tradition and elegance.",
   logo_url: null as string | null,
+  theme_primary: null as string | null,
+  theme_accent: null as string | null,
+  theme_background: null as string | null,
 };
 
 export type ShopSettings = typeof SHOP_DEFAULTS;
