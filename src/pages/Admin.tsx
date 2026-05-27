@@ -65,6 +65,7 @@ const Admin = () => {
           <TabsList className="mb-6">
             <TabsTrigger value="shop">Shop Info</TabsTrigger>
             <TabsTrigger value="products">Products & Photos</TabsTrigger>
+            <TabsTrigger value="theme">Theme</TabsTrigger>
             <TabsTrigger value="help">Help</TabsTrigger>
           </TabsList>
 
@@ -77,6 +78,10 @@ const Admin = () => {
               overrides={overrides}
               onChanged={() => qc.invalidateQueries({ queryKey: ["product_overrides"] })}
             />
+          </TabsContent>
+
+          <TabsContent value="theme">
+            <ThemeForm initial={settings} onSaved={() => qc.invalidateQueries({ queryKey: ["shop_settings"] })} />
           </TabsContent>
 
           <TabsContent value="help">
