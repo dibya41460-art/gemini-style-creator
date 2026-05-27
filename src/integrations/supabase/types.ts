@@ -50,6 +50,9 @@ export type Database = {
           phone_tel: string
           shop_name: string
           shop_tagline: string
+          theme_accent: string | null
+          theme_background: string | null
+          theme_primary: string | null
           updated_at: string
           whatsapp: string
         }
@@ -67,6 +70,9 @@ export type Database = {
           phone_tel?: string
           shop_name?: string
           shop_tagline?: string
+          theme_accent?: string | null
+          theme_background?: string | null
+          theme_primary?: string | null
           updated_at?: string
           whatsapp?: string
         }
@@ -84,6 +90,9 @@ export type Database = {
           phone_tel?: string
           shop_name?: string
           shop_tagline?: string
+          theme_accent?: string | null
+          theme_background?: string | null
+          theme_primary?: string | null
           updated_at?: string
           whatsapp?: string
         }

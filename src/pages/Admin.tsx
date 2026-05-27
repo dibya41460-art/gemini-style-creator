@@ -65,6 +65,7 @@ const Admin = () => {
           <TabsList className="mb-6">
             <TabsTrigger value="shop">Shop Info</TabsTrigger>
             <TabsTrigger value="products">Products & Photos</TabsTrigger>
+            <TabsTrigger value="theme">Theme</TabsTrigger>
             <TabsTrigger value="help">Help</TabsTrigger>
           </TabsList>
 
@@ -77,6 +78,10 @@ const Admin = () => {
               overrides={overrides}
               onChanged={() => qc.invalidateQueries({ queryKey: ["product_overrides"] })}
             />
+          </TabsContent>
+
+          <TabsContent value="theme">
+            <ThemeForm initial={settings} onSaved={() => qc.invalidateQueries({ queryKey: ["shop_settings"] })} />
           </TabsContent>
 
           <TabsContent value="help">
@@ -263,3 +268,107 @@ const ProductRow = ({ product, override, onChanged }: { product: any; override: 
 };
 
 export default Admin;
+
+/* ---------- Theme form ---------- */
+// Convert "H S% L%" string <-> hex for native color picker
+const hslStrToHex = (hsl: string | null | undefined, fallback: string): string => {
+  if (!hsl) return fallback;
+  const m = hsl.trim().match(/^(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%$/);
+  if (!m) return fallback;
+  const h = +m[1] / 360, s = +m[2] / 100, l = +m[3] / 100;
+  const k = (n: number) => (n + h * 12) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => {
+    const c = l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return Math.round(c * 255).toString(16).padStart(2, "0");
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+};
+
+const hexToHslStr = (hex: string): string => {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  let h = 0, s = 0;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h *= 60;
+  }
+  return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+};
+
+const ThemeForm = ({ initial, onSaved }: { initial: any; onSaved: () => void }) => {
+  const defaults = { primary: "43 72% 53%", accent: "345 80% 30%", background: "0 0% 4%" };
+  const [primary, setPrimary] = useState(initial.theme_primary ?? defaults.primary);
+  const [accent, setAccent] = useState(initial.theme_accent ?? defaults.accent);
+  const [background, setBackground] = useState(initial.theme_background ?? defaults.background);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setPrimary(initial.theme_primary ?? defaults.primary);
+    setAccent(initial.theme_accent ?? defaults.accent);
+    setBackground(initial.theme_background ?? defaults.background);
+  }, [initial.theme_primary, initial.theme_accent, initial.theme_background]);
+
+  const save = async (reset = false) => {
+    setBusy(true);
+    const { error } = await supabase
+      .from("shop_settings")
+      .update({
+        theme_primary: reset ? null : primary,
+        theme_accent: reset ? null : accent,
+        theme_background: reset ? null : background,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", "main");
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success(reset ? "Theme reset to default" : "Theme saved");
+    onSaved();
+  };
+
+  const swatch = (label: string, hint: string, value: string, setValue: (v: string) => void, fallback: string) => (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      <div className="flex items-center gap-3">
+        <input
+          type="color"
+          value={hslStrToHex(value, hslStrToHex(fallback, "#cda53d"))}
+          onChange={(e) => setValue(hexToHslStr(e.target.value))}
+          className="h-10 w-16 rounded border border-border bg-transparent cursor-pointer"
+        />
+        <Input value={value} onChange={(e) => setValue(e.target.value)} placeholder={fallback} className="flex-1 font-mono text-xs" />
+      </div>
+      <p className="text-xs text-muted-foreground">{hint}</p>
+    </div>
+  );
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-6 space-y-5">
+      <div>
+        <h2 className="font-display text-lg text-primary">Site theme</h2>
+        <p className="text-xs text-muted-foreground">Pick the main colors of the website. Changes apply instantly to all visitors.</p>
+      </div>
+      {swatch("Primary (gold accent, buttons, highlights)", "Used for buttons, links and gold pricing.", primary, setPrimary, defaults.primary)}
+      {swatch("Accent (secondary highlight)", "Used for badges and secondary callouts.", accent, setAccent, defaults.accent)}
+      {swatch("Background", "The main page background.", background, setBackground, defaults.background)}
+
+      <div className="flex flex-wrap gap-2 pt-2">
+        <Button onClick={() => save(false)} disabled={busy} className="bg-primary text-primary-foreground hover:bg-gold-dark">
+          <Save className="w-4 h-4 mr-2" /> {busy ? "Saving…" : "Save theme"}
+        </Button>
+        <Button variant="outline" onClick={() => save(true)} disabled={busy}>
+          <RotateCcw className="w-4 h-4 mr-2" /> Reset to default
+        </Button>
+      </div>
+    </div>
+  );
+};

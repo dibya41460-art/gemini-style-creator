@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound.tsx";
 import CategoryPage from "./pages/CategoryPage.tsx";
 import Auth from "./pages/Auth.tsx";
 import Admin from "./pages/Admin.tsx";
+import ThemeApplier from "./components/ThemeApplier";
 
 const queryClient = new QueryClient();
 
@@ -16,6 +17,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <ThemeApplier />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
