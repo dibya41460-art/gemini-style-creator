@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Calendar, CheckCircle2 } from "lucide-react";
 import { useShopSettings } from "@/hooks/useShopSettings";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AppointmentDialogProps {
   open: boolean;
@@ -28,7 +29,7 @@ const AppointmentDialog = ({ open, onClose, productName }: AppointmentDialogProp
 
   const minDate = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !phone || !date || !time) {
       toast.error("Please fill all required fields");
@@ -38,6 +39,19 @@ const AppointmentDialog = ({ open, onClose, productName }: AppointmentDialogProp
     const formatted = new Date(date).toLocaleDateString("en-GB", {
       weekday: "long", day: "numeric", month: "long", year: "numeric",
     });
+    const { error } = await supabase.from("appointments").insert({
+      reference: id,
+      name,
+      phone,
+      appointment_date: date,
+      appointment_time: time,
+      notes: notes || null,
+      product_name: productName || null,
+    });
+    if (error) {
+      toast.error("Could not save booking", { description: error.message });
+      return;
+    }
     setConfirmed({ id, date: `${formatted} at ${time}` });
     toast.success("Appointment confirmed!", {
       description: `Ref ${id} — we'll call ${phone} to confirm.`,

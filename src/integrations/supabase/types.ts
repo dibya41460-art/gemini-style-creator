@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          appointment_date: string
+          appointment_time: string
+          created_at: string
+          id: string
+          is_read: boolean
+          name: string
+          notes: string | null
+          phone: string
+          product_name: string | null
+          reference: string
+        }
+        Insert: {
+          appointment_date: string
+          appointment_time: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          name: string
+          notes?: string | null
+          phone: string
+          product_name?: string | null
+          reference: string
+        }
+        Update: {
+          appointment_date?: string
+          appointment_time?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string
+          product_name?: string | null
+          reference?: string
+        }
+        Relationships: []
+      }
       product_overrides: {
         Row: {
           image_url: string | null
