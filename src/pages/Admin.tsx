@@ -297,6 +297,78 @@ const ProductRow = ({ product, override, onChanged }: { product: any; override: 
 
 export default Admin;
 
+/* ---------- Appointments list ---------- */
+const AppointmentsList = ({ appointments, onChanged }: { appointments: any[]; onChanged: () => void }) => {
+  const markRead = async (id: string, is_read: boolean) => {
+    const { error } = await supabase.from("appointments").update({ is_read }).eq("id", id);
+    if (error) return toast.error(error.message);
+    onChanged();
+  };
+  const remove = async (id: string) => {
+    if (!confirm("Delete this appointment?")) return;
+    const { error } = await supabase.from("appointments").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Deleted");
+    onChanged();
+  };
+
+  if (appointments.length === 0) {
+    return (
+      <div className="bg-card border border-border rounded-xl p-10 text-center text-muted-foreground text-sm">
+        No appointments yet. New bookings from the website will appear here automatically.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {appointments.map((a) => {
+        const dateStr = new Date(a.appointment_date).toLocaleDateString("en-GB", {
+          weekday: "short", day: "numeric", month: "short", year: "numeric",
+        });
+        const received = new Date(a.created_at).toLocaleString("en-GB");
+        return (
+          <div
+            key={a.id}
+            className={`rounded-lg border p-4 flex flex-col sm:flex-row sm:items-start gap-3 ${
+              a.is_read ? "bg-card border-border" : "bg-primary/5 border-primary/40"
+            }`}
+          >
+            <div className="flex-1 min-w-0 space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-medium">{a.name}</span>
+                <span className="text-xs text-muted-foreground">Ref {a.reference}</span>
+                {!a.is_read && (
+                  <span className="text-[10px] uppercase tracking-wider bg-primary text-primary-foreground px-2 py-0.5 rounded">
+                    New
+                  </span>
+                )}
+              </div>
+              <div className="text-sm text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
+                <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{a.phone}</span>
+                <span>{dateStr} at {a.appointment_time}</span>
+              </div>
+              {a.product_name && (
+                <p className="text-xs text-muted-foreground">Interested in: <span className="text-foreground">{a.product_name}</span></p>
+              )}
+              {a.notes && <p className="text-xs text-muted-foreground italic">"{a.notes}"</p>}
+              <p className="text-[10px] text-muted-foreground/70">Received {received}</p>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <Button size="sm" variant="outline" onClick={() => markRead(a.id, !a.is_read)}>
+                <Check className="w-3 h-3 mr-1" /> {a.is_read ? "Mark unread" : "Mark read"}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => remove(a.id)}>
+                <Trash2 className="w-3 h-3" />
+              </Button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 /* ---------- Theme form ---------- */
 // Convert "H S% L%" string <-> hex for native color picker
 const hslStrToHex = (hsl: string | null | undefined, fallback: string): string => {
