@@ -56,18 +56,21 @@ export type Database = {
       product_overrides: {
         Row: {
           image_url: string | null
+          name_override: string | null
           price_override: string | null
           product_id: string
           updated_at: string
         }
         Insert: {
           image_url?: string | null
+          name_override?: string | null
           price_override?: string | null
           product_id: string
           updated_at?: string
         }
         Update: {
           image_url?: string | null
+          name_override?: string | null
           price_override?: string | null
           product_id?: string
           updated_at?: string
