@@ -224,10 +224,12 @@ const ProductsManager = ({ overrides, onChanged }: { overrides: Map<string, any>
 
 const ProductRow = ({ product, override, onChanged }: { product: any; override: any; onChanged: () => void }) => {
   const [price, setPrice] = useState(override?.price_override ?? "");
+  const [name, setName] = useState(override?.name_override ?? "");
   const [busy, setBusy] = useState(false);
   const displayedImg = override?.image_url ?? product.image;
 
   useEffect(() => setPrice(override?.price_override ?? ""), [override?.price_override]);
+  useEffect(() => setName(override?.name_override ?? ""), [override?.name_override]);
 
   const upsert = async (patch: any) => {
     setBusy(true);
@@ -246,6 +248,7 @@ const ProductRow = ({ product, override, onChanged }: { product: any; override: 
     setBusy(false);
     if (error) return toast.error(error.message);
     setPrice("");
+    setName("");
     toast.success("Reset to default");
     onChanged();
   };
@@ -261,15 +264,25 @@ const ProductRow = ({ product, override, onChanged }: { product: any; override: 
     const { error: upErr } = await supabase.storage.from("shop-images").upload(path, file, { upsert: true });
     if (upErr) { setBusy(false); return toast.error(upErr.message); }
     const { data } = supabase.storage.from("shop-images").getPublicUrl(path);
-    await upsert({ image_url: data.publicUrl, price_override: override?.price_override ?? null });
+    await upsert({ image_url: data.publicUrl, price_override: override?.price_override ?? null, name_override: override?.name_override ?? null });
   };
 
   return (
     <div className="bg-card border border-border rounded-lg p-3 flex items-center gap-3">
       <img src={displayedImg} alt={product.name} className="w-16 h-16 object-cover rounded shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{product.name}</p>
-        <p className="text-xs text-muted-foreground">{product.source} · {product.id} · default {product.price}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            className="h-8 w-56 text-sm font-medium"
+            placeholder={`Rename (default: ${product.name})`}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Button size="sm" variant="outline" disabled={busy} onClick={() => upsert({ name_override: name.trim() || null, price_override: override?.price_override ?? null, image_url: override?.image_url ?? null })}>
+            <Save className="w-3 h-3 mr-1" /> Save name
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">{product.source} · {product.id} · default name <span className="text-foreground">{product.name}</span> · default {product.price}</p>
         <div className="flex flex-wrap gap-2 mt-2 items-center">
           <Input
             className="h-8 w-36"
@@ -277,14 +290,14 @@ const ProductRow = ({ product, override, onChanged }: { product: any; override: 
             value={price}
             onChange={(e) => setPrice(e.target.value)}
           />
-          <Button size="sm" variant="outline" disabled={busy} onClick={() => upsert({ price_override: price || null, image_url: override?.image_url ?? null })}>
+          <Button size="sm" variant="outline" disabled={busy} onClick={() => upsert({ price_override: price || null, image_url: override?.image_url ?? null, name_override: override?.name_override ?? null })}>
             <Save className="w-3 h-3 mr-1" /> Save price
           </Button>
           <label className="inline-flex items-center text-xs cursor-pointer px-3 py-1.5 border border-border rounded hover:border-primary">
             <Upload className="w-3 h-3 mr-1" /> Upload photo
             <input type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={busy} />
           </label>
-          {(override?.price_override || override?.image_url) && (
+          {(override?.price_override || override?.image_url || override?.name_override) && (
             <Button size="sm" variant="ghost" onClick={reset} disabled={busy}>
               <RotateCcw className="w-3 h-3 mr-1" /> Reset
             </Button>

@@ -38,11 +38,11 @@ const HeroSection = () => {
           <p className="text-lg md:text-xl font-body text-foreground/70 max-w-md opacity-0 animate-fade-in [animation-delay:400ms]">
             Discover handcrafted jewelry that celebrates tradition, artistry, and the beauty of pure gold.
           </p>
-          <div className="flex gap-4 opacity-0 animate-fade-in [animation-delay:600ms]">
-            <Button onClick={scrollToCollections} size="lg" className="bg-primary text-primary-foreground hover:bg-gold-dark tracking-[0.15em] uppercase text-sm font-body font-semibold px-8">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 opacity-0 animate-fade-in [animation-delay:600ms] max-w-xs sm:max-w-none">
+            <Button onClick={scrollToCollections} size="lg" className="bg-primary text-primary-foreground hover:bg-gold-dark tracking-[0.15em] uppercase text-sm font-body font-semibold px-8 w-full sm:w-auto">
               Explore Collection
             </Button>
-            <Button onClick={() => setBookOpen(true)} size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground tracking-[0.15em] uppercase text-sm font-body font-semibold px-8">
+            <Button onClick={() => setBookOpen(true)} size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground tracking-[0.15em] uppercase text-sm font-body font-semibold px-8 w-full sm:w-auto">
               Book Appointment
             </Button>
           </div>

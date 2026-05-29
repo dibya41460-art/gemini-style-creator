@@ -5,6 +5,7 @@ export interface ProductOverride {
   product_id: string;
   price_override: string | null;
   image_url: string | null;
+  name_override: string | null;
 }
 
 export const useProductOverrides = () => {
@@ -22,7 +23,7 @@ export const useProductOverrides = () => {
   return data ?? new Map<string, ProductOverride>();
 };
 
-export const applyOverride = <T extends { id: string; price: string; image: string }>(
+export const applyOverride = <T extends { id: string; name: string; price: string; image: string }>(
   product: T,
   overrides: Map<string, ProductOverride>
 ): T => {
@@ -30,6 +31,7 @@ export const applyOverride = <T extends { id: string; price: string; image: stri
   if (!o) return product;
   return {
     ...product,
+    name: o.name_override ?? product.name,
     price: o.price_override ?? product.price,
     image: o.image_url ?? product.image,
   };
