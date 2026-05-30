@@ -12,8 +12,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { LogOut, Save, Upload, RotateCcw, Search, Bell, Trash2, Check, Phone } from "lucide-react";
+import { LogOut, Save, Upload, RotateCcw, Search, Bell, Trash2, Check, Phone, Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+
+const CATEGORY_OPTIONS = [
+  { value: "featured", label: "Featured (homepage)" },
+  { value: "gold", label: "Gold Collection" },
+  { value: "diamond", label: "Diamond Collection" },
+  { value: "necklaces", label: "Category: Necklaces" },
+  { value: "earrings", label: "Category: Earrings" },
+  { value: "bangles", label: "Category: Bangles" },
+  { value: "rings", label: "Category: Rings" },
+];
 
 const Admin = () => {
   const navigate = useNavigate();
