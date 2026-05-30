@@ -209,7 +209,15 @@ const ShopInfoForm = ({ initial, onSaved }: { initial: any; onSaved: () => void 
 };
 
 /* ---------- Products manager ---------- */
-const ProductsManager = ({ overrides, onChanged }: { overrides: Map<string, any>; onChanged: () => void }) => {
+const ProductsManager = ({
+  overrides,
+  onChanged,
+  onCustomChanged,
+}: {
+  overrides: Map<string, any>;
+  onChanged: () => void;
+  onCustomChanged: () => void;
+}) => {
   const all = useMemo(() => getAllCatalogItems(), []);
   const [q, setQ] = useState("");
   const filtered = useMemo(() => {
@@ -218,7 +226,12 @@ const ProductsManager = ({ overrides, onChanged }: { overrides: Map<string, any>
   }, [q, all]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <CustomProductsSection onChanged={onCustomChanged} />
+      <div className="pt-2">
+        <h3 className="font-display text-base text-primary">Existing template products</h3>
+        <p className="text-xs text-muted-foreground">Rename, re-price, change photo, or override description / origin / carat to repurpose a slot.</p>
+      </div>
       <div className="relative">
         <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <Input className="pl-9" placeholder={`Search ${all.length} products by name or id…`} value={q} onChange={(e) => setQ(e.target.value)} />
@@ -237,10 +250,34 @@ const ProductRow = ({ product, override, onChanged }: { product: any; override: 
   const [price, setPrice] = useState(override?.price_override ?? "");
   const [name, setName] = useState(override?.name_override ?? "");
   const [busy, setBusy] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [desc, setDesc] = useState(override?.description_override ?? "");
+  const [origin, setOrigin] = useState(override?.origin_override ?? "");
+  const [material, setMaterial] = useState(override?.material_override ?? "");
+  const [craftsmanship, setCraftsmanship] = useState(override?.craftsmanship_override ?? "");
+  const [certification, setCertification] = useState(override?.certification_override ?? "");
+  const [deliveryTime, setDeliveryTime] = useState(override?.delivery_time_override ?? "");
+  const [purity, setPurity] = useState(override?.purity_override ?? "");
+  const [carat, setCarat] = useState(override?.carat_override ?? "");
+  const [weight, setWeight] = useState(override?.weight_override ?? "");
+  const [clarity, setClarity] = useState(override?.clarity_override ?? "");
   const displayedImg = override?.image_url ?? product.image;
+  const hasOverride = !!(override?.name_override || override?.price_override || override?.image_url || override?.description_override);
 
   useEffect(() => setPrice(override?.price_override ?? ""), [override?.price_override]);
   useEffect(() => setName(override?.name_override ?? ""), [override?.name_override]);
+  useEffect(() => {
+    setDesc(override?.description_override ?? "");
+    setOrigin(override?.origin_override ?? "");
+    setMaterial(override?.material_override ?? "");
+    setCraftsmanship(override?.craftsmanship_override ?? "");
+    setCertification(override?.certification_override ?? "");
+    setDeliveryTime(override?.delivery_time_override ?? "");
+    setPurity(override?.purity_override ?? "");
+    setCarat(override?.carat_override ?? "");
+    setWeight(override?.weight_override ?? "");
+    setClarity(override?.clarity_override ?? "");
+  }, [override]);
 
   const upsert = async (patch: any) => {
     setBusy(true);
@@ -278,8 +315,25 @@ const ProductRow = ({ product, override, onChanged }: { product: any; override: 
     await upsert({ image_url: data.publicUrl, price_override: override?.price_override ?? null, name_override: override?.name_override ?? null });
   };
 
+  const saveDetails = () =>
+    upsert({
+      name_override: name.trim() || null,
+      price_override: price || null,
+      image_url: override?.image_url ?? null,
+      description_override: desc.trim() || null,
+      origin_override: origin.trim() || null,
+      material_override: material.trim() || null,
+      craftsmanship_override: craftsmanship.trim() || null,
+      certification_override: certification.trim() || null,
+      delivery_time_override: deliveryTime.trim() || null,
+      purity_override: purity.trim() || null,
+      carat_override: carat.trim() || null,
+      weight_override: weight.trim() || null,
+      clarity_override: clarity.trim() || null,
+    });
+
   return (
-    <div className="bg-card border border-border rounded-lg p-3 flex items-center gap-3">
+    <div className="bg-card border border-border rounded-lg p-3 flex items-start gap-3">
       <img src={displayedImg} alt={product.name} className="w-16 h-16 object-cover rounded shrink-0" />
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2">
@@ -292,6 +346,11 @@ const ProductRow = ({ product, override, onChanged }: { product: any; override: 
           <Button size="sm" variant="outline" disabled={busy} onClick={() => upsert({ name_override: name.trim() || null, price_override: override?.price_override ?? null, image_url: override?.image_url ?? null })}>
             <Save className="w-3 h-3 mr-1" /> Save name
           </Button>
+          {hasOverride && (
+            <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-primary bg-primary/10 border border-primary/30 rounded px-2 py-0.5">
+              <Check className="w-3 h-3" /> Saved
+            </span>
+          )}
         </div>
         <p className="text-xs text-muted-foreground mt-1">{product.source} · {product.id} · default name <span className="text-foreground">{product.name}</span> · default {product.price}</p>
         <div className="flex flex-wrap gap-2 mt-2 items-center">
@@ -308,12 +367,36 @@ const ProductRow = ({ product, override, onChanged }: { product: any; override: 
             <Upload className="w-3 h-3 mr-1" /> Upload photo
             <input type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={busy} />
           </label>
-          {(override?.price_override || override?.image_url || override?.name_override) && (
+          {(override?.price_override || override?.image_url || override?.name_override || override?.description_override) && (
             <Button size="sm" variant="ghost" onClick={reset} disabled={busy}>
               <RotateCcw className="w-3 h-3 mr-1" /> Reset
             </Button>
           )}
+          <Button size="sm" variant="ghost" onClick={() => setExpanded((v) => !v)}>
+            {expanded ? <ChevronUp className="w-3 h-3 mr-1" /> : <ChevronDown className="w-3 h-3 mr-1" />}
+            {expanded ? "Hide details" : "Edit description & details"}
+          </Button>
         </div>
+        {expanded && (
+          <div className="mt-3 pt-3 border-t border-border space-y-2">
+            <p className="text-[11px] text-muted-foreground">Leave a field empty to keep the original. Useful when renaming a piece to a completely different item — fill in the new origin, carat, certification, etc.</p>
+            <Textarea placeholder="Description override" value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <Input placeholder="Origin" value={origin} onChange={(e) => setOrigin(e.target.value)} className="h-8" />
+              <Input placeholder="Material" value={material} onChange={(e) => setMaterial(e.target.value)} className="h-8" />
+              <Input placeholder="Craftsmanship" value={craftsmanship} onChange={(e) => setCraftsmanship(e.target.value)} className="h-8" />
+              <Input placeholder="Certification" value={certification} onChange={(e) => setCertification(e.target.value)} className="h-8" />
+              <Input placeholder="Delivery time" value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} className="h-8" />
+              <Input placeholder="Weight (e.g. 22.5 gm)" value={weight} onChange={(e) => setWeight(e.target.value)} className="h-8" />
+              <Input placeholder="Purity (e.g. 22K)" value={purity} onChange={(e) => setPurity(e.target.value)} className="h-8" />
+              <Input placeholder="Carat (e.g. 0.5ct)" value={carat} onChange={(e) => setCarat(e.target.value)} className="h-8" />
+              <Input placeholder="Clarity (e.g. VS1)" value={clarity} onChange={(e) => setClarity(e.target.value)} className="h-8" />
+            </div>
+            <Button size="sm" disabled={busy} onClick={saveDetails} className="bg-primary text-primary-foreground hover:bg-gold-dark">
+              <Save className="w-3 h-3 mr-1" /> Save all details
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
