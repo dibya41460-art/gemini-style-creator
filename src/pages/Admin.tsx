@@ -111,6 +111,7 @@ const Admin = () => {
             <ProductsManager
               overrides={overrides}
               onChanged={() => qc.invalidateQueries({ queryKey: ["product_overrides"] })}
+              onCustomChanged={() => qc.invalidateQueries({ queryKey: ["custom_products"] })}
             />
           </TabsContent>
 
