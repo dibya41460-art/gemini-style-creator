@@ -404,6 +404,191 @@ const ProductRow = ({ product, override, onChanged }: { product: any; override: 
 
 export default Admin;
 
+/* ---------- Custom products: add + list admin-owned items ---------- */
+const CustomProductsSection = ({ onChanged }: { onChanged: () => void }) => {
+  const { data: items = [], refetch } = useQuery({
+    queryKey: ["custom_products"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("custom_products")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const refresh = () => {
+    refetch();
+    onChanged();
+  };
+
+  return (
+    <div className="bg-card border border-primary/30 rounded-xl p-5 space-y-4">
+      <div>
+        <h3 className="font-display text-lg text-primary flex items-center gap-2">
+          <Plus className="w-5 h-5" /> Add a new product
+        </h3>
+        <p className="text-xs text-muted-foreground">Upload a photo, set name + price, pick a category — it appears on the website automatically.</p>
+      </div>
+      <AddProductForm onAdded={refresh} />
+      {items.length > 0 && (
+        <div className="pt-2 border-t border-border space-y-2">
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">Your custom products ({items.length})</p>
+          <div className="space-y-2">
+            {items.map((it: any) => (
+              <CustomProductRow key={it.id} item={it} onChanged={refresh} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const AddProductForm = ({ onAdded }: { onAdded: () => void }) => {
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [category, setCategory] = useState("featured");
+  const [file, setFile] = useState<File | null>(null);
+  const [description, setDescription] = useState("");
+  const [origin, setOrigin] = useState("");
+  const [material, setMaterial] = useState("");
+  const [craftsmanship, setCraftsmanship] = useState("");
+  const [certification, setCertification] = useState("");
+  const [deliveryTime, setDeliveryTime] = useState("");
+  const [purity, setPurity] = useState("");
+  const [carat, setCarat] = useState("");
+  const [weight, setWeight] = useState("");
+  const [clarity, setClarity] = useState("");
+  const [tag, setTag] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    if (!name.trim() || !price.trim()) return toast.error("Name and price are required");
+    if (!file) return toast.error("Please upload a photo");
+    setBusy(true);
+    try {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `custom/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("shop-images").upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("shop-images").getPublicUrl(path);
+      const { error } = await supabase.from("custom_products").insert({
+        name: name.trim(),
+        price: price.trim(),
+        image: pub.publicUrl,
+        category,
+        description: description.trim() || null,
+        origin: origin.trim() || null,
+        material: material.trim() || null,
+        craftsmanship: craftsmanship.trim() || null,
+        certification: certification.trim() || null,
+        delivery_time: deliveryTime.trim() || null,
+        purity: purity.trim() || null,
+        carat: carat.trim() || null,
+        weight: weight.trim() || null,
+        clarity: clarity.trim() || null,
+        tag: tag.trim() || null,
+      });
+      if (error) throw error;
+      toast.success(`Added "${name}" to ${category}`);
+      setName(""); setPrice(""); setFile(null); setDescription("");
+      setOrigin(""); setMaterial(""); setCraftsmanship(""); setCertification("");
+      setDeliveryTime(""); setPurity(""); setCarat(""); setWeight(""); setClarity(""); setTag("");
+      onAdded();
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to add product");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <Input placeholder="Product name *" value={name} onChange={(e) => setName(e.target.value)} />
+        <Input placeholder="Price * (e.g. ৳1,25,000)" value={price} onChange={(e) => setPrice(e.target.value)} />
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="h-10 px-3 rounded-md border border-input bg-background text-sm"
+        >
+          {CATEGORY_OPTIONS.map((c) => (
+            <option key={c.value} value={c.value}>{c.label}</option>
+          ))}
+        </select>
+        <label className="inline-flex items-center justify-center text-xs cursor-pointer px-3 h-10 border border-dashed border-primary/40 rounded-md hover:border-primary bg-background">
+          <Upload className="w-4 h-4 mr-2" />
+          {file ? file.name.slice(0, 28) : "Upload photo *"}
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+        </label>
+      </div>
+      <Textarea placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <Input placeholder="Origin" value={origin} onChange={(e) => setOrigin(e.target.value)} />
+        <Input placeholder="Material" value={material} onChange={(e) => setMaterial(e.target.value)} />
+        <Input placeholder="Craftsmanship" value={craftsmanship} onChange={(e) => setCraftsmanship(e.target.value)} />
+        <Input placeholder="Certification" value={certification} onChange={(e) => setCertification(e.target.value)} />
+        <Input placeholder="Delivery time (e.g. 7–10 working days)" value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} />
+        <Input placeholder="Weight (e.g. 22.5 gm)" value={weight} onChange={(e) => setWeight(e.target.value)} />
+        <Input placeholder="Purity (e.g. 22K)" value={purity} onChange={(e) => setPurity(e.target.value)} />
+        <Input placeholder="Carat (e.g. 0.5ct)" value={carat} onChange={(e) => setCarat(e.target.value)} />
+        <Input placeholder="Clarity (e.g. VS1)" value={clarity} onChange={(e) => setClarity(e.target.value)} />
+        <Input placeholder="Tag/badge (e.g. New, Bestseller)" value={tag} onChange={(e) => setTag(e.target.value)} />
+      </div>
+      <Button onClick={submit} disabled={busy} className="bg-primary text-primary-foreground hover:bg-gold-dark">
+        <Plus className="w-4 h-4 mr-1" /> {busy ? "Adding…" : "Add product to site"}
+      </Button>
+    </div>
+  );
+};
+
+const CustomProductRow = ({ item, onChanged }: { item: any; onChanged: () => void }) => {
+  const [name, setName] = useState(item.name);
+  const [price, setPrice] = useState(item.price);
+  const [busy, setBusy] = useState(false);
+
+  const save = async () => {
+    setBusy(true);
+    const { error } = await supabase
+      .from("custom_products")
+      .update({ name, price, updated_at: new Date().toISOString() })
+      .eq("id", item.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Saved");
+    onChanged();
+  };
+
+  const remove = async () => {
+    if (!confirm(`Delete "${item.name}"?`)) return;
+    setBusy(true);
+    const { error } = await supabase.from("custom_products").delete().eq("id", item.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Deleted");
+    onChanged();
+  };
+
+  return (
+    <div className="bg-background border border-border rounded-lg p-2 flex items-center gap-2">
+      <img src={item.image} alt={item.name} className="w-12 h-12 object-cover rounded shrink-0" />
+      <div className="flex-1 min-w-0 flex flex-wrap items-center gap-2">
+        <Input className="h-8 w-48 text-sm" value={name} onChange={(e) => setName(e.target.value)} />
+        <Input className="h-8 w-32 text-sm" value={price} onChange={(e) => setPrice(e.target.value)} />
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{item.category}</span>
+        <Button size="sm" variant="outline" disabled={busy} onClick={save}>
+          <Save className="w-3 h-3 mr-1" /> Save
+        </Button>
+        <Button size="sm" variant="ghost" disabled={busy} onClick={remove}>
+          <Trash2 className="w-3 h-3" />
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 /* ---------- Appointments list ---------- */
 const AppointmentsList = ({ appointments, onChanged }: { appointments: any[]; onChanged: () => void }) => {
   const markRead = async (id: string, is_read: boolean) => {
