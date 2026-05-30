@@ -53,27 +53,126 @@ export type Database = {
         }
         Relationships: []
       }
-      product_overrides: {
+      custom_products: {
         Row: {
-          image_url: string | null
-          name_override: string | null
-          price_override: string | null
-          product_id: string
+          carat: string | null
+          category: string
+          certification: string | null
+          clarity: string | null
+          craftsmanship: string | null
+          created_at: string
+          delivery_time: string | null
+          description: string | null
+          id: string
+          image: string
+          material: string | null
+          name: string
+          origin: string | null
+          price: string
+          purity: string | null
+          sku: string | null
+          sort_order: number
+          tag: string | null
           updated_at: string
+          weight: string | null
         }
         Insert: {
-          image_url?: string | null
-          name_override?: string | null
-          price_override?: string | null
-          product_id: string
+          carat?: string | null
+          category?: string
+          certification?: string | null
+          clarity?: string | null
+          craftsmanship?: string | null
+          created_at?: string
+          delivery_time?: string | null
+          description?: string | null
+          id?: string
+          image: string
+          material?: string | null
+          name: string
+          origin?: string | null
+          price: string
+          purity?: string | null
+          sku?: string | null
+          sort_order?: number
+          tag?: string | null
           updated_at?: string
+          weight?: string | null
         }
         Update: {
+          carat?: string | null
+          category?: string
+          certification?: string | null
+          clarity?: string | null
+          craftsmanship?: string | null
+          created_at?: string
+          delivery_time?: string | null
+          description?: string | null
+          id?: string
+          image?: string
+          material?: string | null
+          name?: string
+          origin?: string | null
+          price?: string
+          purity?: string | null
+          sku?: string | null
+          sort_order?: number
+          tag?: string | null
+          updated_at?: string
+          weight?: string | null
+        }
+        Relationships: []
+      }
+      product_overrides: {
+        Row: {
+          carat_override: string | null
+          certification_override: string | null
+          clarity_override: string | null
+          craftsmanship_override: string | null
+          delivery_time_override: string | null
+          description_override: string | null
+          image_url: string | null
+          material_override: string | null
+          name_override: string | null
+          origin_override: string | null
+          price_override: string | null
+          product_id: string
+          purity_override: string | null
+          updated_at: string
+          weight_override: string | null
+        }
+        Insert: {
+          carat_override?: string | null
+          certification_override?: string | null
+          clarity_override?: string | null
+          craftsmanship_override?: string | null
+          delivery_time_override?: string | null
+          description_override?: string | null
           image_url?: string | null
+          material_override?: string | null
           name_override?: string | null
+          origin_override?: string | null
+          price_override?: string | null
+          product_id: string
+          purity_override?: string | null
+          updated_at?: string
+          weight_override?: string | null
+        }
+        Update: {
+          carat_override?: string | null
+          certification_override?: string | null
+          clarity_override?: string | null
+          craftsmanship_override?: string | null
+          delivery_time_override?: string | null
+          description_override?: string | null
+          image_url?: string | null
+          material_override?: string | null
+          name_override?: string | null
+          origin_override?: string | null
           price_override?: string | null
           product_id?: string
+          purity_override?: string | null
           updated_at?: string
+          weight_override?: string | null
         }
         Relationships: []
       }

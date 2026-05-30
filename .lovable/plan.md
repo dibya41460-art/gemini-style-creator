@@ -1,62 +1,47 @@
-## What you'll get
+# Plan
 
-1. **Admin-only login + dashboard** to edit shop details, prices, and upload real photos.
-2. **Customers** keep seeing the site exactly as it is today — view-only, no login needed.
-3. **PDF Owner's Manual** explaining everything the new buyer needs to know.
+## 1. Why your rename "disappeared"
+Your database currently has **zero saved overrides** (the `product_overrides` table is empty). The rename feature works correctly and persists — but nothing was ever actually saved. Possible reasons:
+- You typed a new name but didn't click **Save name** (each row has its own Save button).
+- You renamed something on the **preview** site but viewed the **published** site, which only updates after you click **Publish** in the top-right.
 
----
+The data layer is fine. After this update I'll add a clear "Saved ✓" indicator so you can see it stuck.
 
-## Part 1 — Backend (Lovable Cloud)
+## 2. Homepage navigation (Logo + Home)
+Right now the logo and "Home" link use `#hero`, which only scrolls — it doesn't work from `/category/...` or `/admin`. Fix: make both navigate to `/` and then scroll to the top.
 
-Enable Lovable Cloud and create:
+## 3. "Contact Us" call popup
+Replace the current Contact Us button behavior with a centered popup that:
+- Shows your shop phone number in **large font**
+- Has a **Cancel ✕** in the top-right corner
+- **Auto-closes after 8 seconds**
+- Tapping the number on mobile starts a call
 
-- **Auth**: email + password login. First registered email becomes admin (or you promote via SQL).
-- **`user_roles` table** with an `admin` role (secure, no privilege escalation).
-- **`shop_settings` table** (single row): shop name, phone, WhatsApp, address, email, tagline, hero text, gold rate, etc.
-- **`product_overrides` table**: keyed by product id, optional fields for custom `price` and `image_url` so admin can override any catalog item without touching code.
-- **Storage bucket** `shop-images` (public read, admin-only write) for uploaded real jewelry photos and logos.
-- **RLS policies**: anyone can read shop_settings / product_overrides / images; only admins can write.
+## 4. Admin: Add brand-new products
+New section in the Products tab: **"+ Add new product"**. Admin fills:
+- Name, Price, Photo (upload)
+- Category (Gold / Diamond / Bridal / Featured / etc.)
+- Optional details: origin, material, craftsmanship, certification, delivery time, purity/carat, weight, clarity, description
 
-## Part 2 — Frontend wiring
+These appear automatically in the chosen category on the public site, alongside existing products. Admin can edit or delete them later.
 
-- Replace hard-coded values in `src/lib/shop.ts` and components (Header, Footer, WhatsAppButton, AppointmentDialog, HeroSection) with values from `shop_settings` (with current values as fallback so nothing breaks before admin edits anything).
-- In product cards and `ProductDetailModal`, merge each item with its override row so admin price/image wins when present.
-- Customers see no UI changes.
+Requires a new table `custom_products` with full product fields, RLS (admins write, public read), and integration into `getAllCatalogItems` + each section.
 
-## Part 3 — Admin dashboard at `/admin`
+## 5. Rename auto-updates description
+Currently overrides only cover name/price/image. To make the description, origin, carat, certification, etc. update when you rename a piece, I'll **extend `product_overrides`** with optional fields: `description`, `origin`, `material`, `craftsmanship`, `certification`, `delivery_time`, `purity`, `carat`, `weight`, `clarity`. The product detail modal will use the override values when present.
 
-Protected route. After login as admin:
-
-- **Shop Info tab** — edit name, phone, WhatsApp, address, email, tagline, gold/silver rates.
-- **Products tab** — searchable list of all 360+ items. Click any item → edit price, upload a replacement photo (drag-and-drop), or reset to default.
-- **Logout** button.
-
-Non-admins or logged-out users hitting `/admin` get redirected to `/auth`.
-
-## Part 4 — Owner's Manual PDF
-
-A printable handover guide (~12–15 pages) covering:
-
-- What the site is and how it's hosted (Lovable)
-- How to log in as admin and change the first password
-- Step-by-step: change shop name / phone / address / WhatsApp
-- Step-by-step: change a product price
-- Step-by-step: replace an AI image with a real photo (size/format tips)
-- How to add a second admin
-- How to publish updates / connect a custom domain
-- Troubleshooting + support contacts section (blank for you to fill)
-
-Delivered as `/mnt/documents/jewelry-site-owners-manual.pdf` with a download button in chat.
+So when you rename "Royal Bridal Set" → "Diamond Tiara", you'll also be able to override every other detail in the same row. Nothing auto-generates a description from AI by default — you fill in the new details. (If you want AI to auto-generate descriptions when you rename, tell me and I'll wire up Lovable AI to do that.)
 
 ---
 
-## Technical notes (for reference)
+### Files I'll change
+- `src/components/Header.tsx` — logo + Home navigate to `/`
+- `src/pages/CategoryPage.tsx` — Contact Us opens new `CallUsDialog`
+- `src/components/CallUsDialog.tsx` — new popup
+- `src/pages/Admin.tsx` — add "Add product" form + extended override fields per row
+- `src/hooks/useProductOverrides.ts` + `src/hooks/useCustomProducts.ts` — new hook
+- `src/components/FeaturedProducts.tsx`, `GoldSection.tsx`, `DiamondSection.tsx`, `BridalSection.tsx`, `CategoryPage.tsx` — include custom products
+- `src/components/ProductDetailModal.tsx` — read description overrides
+- New migration: extend `product_overrides`, create `custom_products` table
 
-- `has_role()` security-definer function to avoid RLS recursion.
-- React Query for fetching settings/overrides; cached so the homepage stays fast.
-- File uploads validated (image only, max 5MB).
-- Zod validation on all admin forms.
-
----
-
-Approving this kicks off Cloud setup, schema, admin UI, and PDF generation in one go. Sound good?
+Approve and I'll build all of this in one pass.
