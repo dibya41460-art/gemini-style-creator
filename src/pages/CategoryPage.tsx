@@ -9,8 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import ProductDetailModal from "@/components/ProductDetailModal";
 import AppointmentDialog from "@/components/AppointmentDialog";
+import CallUsDialog from "@/components/CallUsDialog";
 import { categories, type CategoryItem } from "@/data/categories";
 import { useProductOverrides, applyOverride } from "@/hooks/useProductOverrides";
+import { useCustomProducts, toProduct } from "@/hooks/useCustomProducts";
 
 type SortMode = "featured" | "price-asc" | "price-desc" | "name";
 type TypeFilter = "all" | "Gold" | "Diamond";
@@ -28,12 +30,14 @@ const CategoryPage = () => {
   const { slug } = useParams();
   const data = slug ? categories[slug] : undefined;
   const overrides = useProductOverrides();
+  const customForCategory = useCustomProducts(slug);
 
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [priceFilter, setPriceFilter] = useState<PriceFilter>("all");
   const [sort, setSort] = useState<SortMode>("featured");
   const [selected, setSelected] = useState<CategoryItem | null>(null);
   const [bookOpen, setBookOpen] = useState(false);
+  const [callOpen, setCallOpen] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
@@ -44,7 +48,13 @@ const CategoryPage = () => {
 
   const filtered = useMemo(() => {
     if (!data) return [];
-    let list = data.items.map((i) => applyOverride(i, overrides)).filter(
+    const customItems: CategoryItem[] = (customForCategory as any[]).map((r) => ({
+      ...toProduct(r),
+      meta: r.weight || r.purity || r.carat || "Custom design",
+      priceValue: Number(String(r.price).replace(/[^\d.]/g, "")) || 0,
+      type: (r.carat || r.clarity) ? "Diamond" : "Gold",
+    }));
+    let list = [...customItems, ...data.items.map((i) => applyOverride(i, overrides))].filter(
       (i) =>
         (typeFilter === "all" || i.type === typeFilter) &&
         PRICE_RANGES[priceFilter](i.priceValue)
@@ -53,7 +63,7 @@ const CategoryPage = () => {
     else if (sort === "price-desc") list = [...list].sort((a, b) => b.priceValue - a.priceValue);
     else if (sort === "name") list = [...list].sort((a, b) => a.name.localeCompare(b.name));
     return list;
-  }, [data, typeFilter, priceFilter, sort, overrides]);
+  }, [data, typeFilter, priceFilter, sort, overrides, customForCategory]);
 
   if (!data) return <Navigate to="/404" replace />;
 
@@ -226,7 +236,7 @@ const CategoryPage = () => {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => { window.location.href = "#footer"; }}
+                onClick={() => setCallOpen(true)}
                 className="border-primary text-primary hover:bg-primary hover:text-primary-foreground tracking-[0.15em] uppercase text-sm font-body font-semibold px-8"
               >
                 Contact Us
@@ -244,6 +254,7 @@ const CategoryPage = () => {
         onClose={() => setSelected(null)}
       />
       <AppointmentDialog open={bookOpen} onClose={() => setBookOpen(false)} />
+      <CallUsDialog open={callOpen} onClose={() => setCallOpen(false)} />
     </div>
   );
 };

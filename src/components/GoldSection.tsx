@@ -2,10 +2,15 @@ import { useState, useMemo } from "react";
 import { goldProducts, type Product } from "@/data/products";
 import ProductDetailModal from "@/components/ProductDetailModal";
 import { useProductOverrides, applyOverride } from "@/hooks/useProductOverrides";
+import { useCustomProducts, toProduct } from "@/hooks/useCustomProducts";
 
 const GoldSection = () => {
   const overrides = useProductOverrides();
-  const products = useMemo(() => goldProducts.map((p) => applyOverride(p, overrides)), [overrides]);
+  const custom = useCustomProducts("gold");
+  const products = useMemo(
+    () => [...(custom as any[]).map(toProduct), ...goldProducts.map((p) => applyOverride(p, overrides))],
+    [overrides, custom]
+  );
   const [selected, setSelected] = useState<Product | null>(null);
 
   return (

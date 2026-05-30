@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Menu, X, Phone, MapPin, Search, ShoppingBag } from "lucide-react";
 import SearchOverlay from "@/components/SearchOverlay";
 import { useShopSettings } from "@/hooks/useShopSettings";
@@ -15,10 +16,29 @@ const navLinks = [
 
 const Header = () => {
   const shop = useShopSettings();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState("#hero");
   const [searchOpen, setSearchOpen] = useState(false);
+
+  const goTo = (href: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    const target = href.startsWith("#") ? href.slice(1) : "";
+    if (location.pathname !== "/") {
+      navigate("/" + (href.startsWith("#") ? href : ""));
+      // After navigation, scroll handled by hash; for #hero scroll to top
+      setTimeout(() => {
+        if (target === "hero" || !target) window.scrollTo({ top: 0, behavior: "smooth" });
+        else document.getElementById(target)?.scrollIntoView({ behavior: "smooth" });
+      }, 50);
+    } else {
+      if (target === "hero" || !target) window.scrollTo({ top: 0, behavior: "smooth" });
+      else document.getElementById(target)?.scrollIntoView({ behavior: "smooth" });
+    }
+    setMobileOpen(false);
+  };
 
   useEffect(() => {
     const onScroll = () => {
@@ -83,7 +103,7 @@ const Header = () => {
       >
         <div className="container mx-auto flex items-center justify-between py-3 px-4">
           {/* Logo */}
-          <a href="#hero" className="flex flex-col items-center group">
+          <a href="/" onClick={goTo("#hero")} className="flex flex-col items-center group cursor-pointer">
             <span className="font-display text-2xl md:text-3xl font-bold tracking-wider text-primary group-hover:text-gold-light transition-colors duration-300">
               {shop.shop_name.toUpperCase()}
             </span>
@@ -98,6 +118,7 @@ const Header = () => {
               <li key={link.label}>
                 <a
                   href={link.href}
+                  onClick={goTo(link.href)}
                   className={`relative text-sm tracking-[0.15em] uppercase font-body font-semibold transition-colors duration-300 ${
                     activeSection === link.href
                       ? "text-primary"
@@ -147,12 +168,12 @@ const Header = () => {
               <li key={link.label}>
                 <a
                   href={link.href}
+                  onClick={goTo(link.href)}
                   className={`block px-6 py-3 text-sm tracking-[0.15em] uppercase font-body font-semibold transition-colors ${
                     activeSection === link.href
                       ? "text-primary bg-muted/50"
                       : "text-foreground/60 hover:text-primary hover:bg-muted"
                   }`}
-                  onClick={() => setMobileOpen(false)}
                 >
                   {link.label}
                 </a>

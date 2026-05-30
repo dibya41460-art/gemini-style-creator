@@ -6,6 +6,16 @@ export interface ProductOverride {
   price_override: string | null;
   image_url: string | null;
   name_override: string | null;
+  description_override: string | null;
+  origin_override: string | null;
+  material_override: string | null;
+  craftsmanship_override: string | null;
+  certification_override: string | null;
+  delivery_time_override: string | null;
+  purity_override: string | null;
+  carat_override: string | null;
+  weight_override: string | null;
+  clarity_override: string | null;
 }
 
 export const useProductOverrides = () => {
@@ -29,10 +39,19 @@ export const applyOverride = <T extends { id: string; name: string; price: strin
 ): T => {
   const o = overrides.get(product.id);
   if (!o) return product;
-  return {
-    ...product,
-    name: o.name_override ?? product.name,
-    price: o.price_override ?? product.price,
-    image: o.image_url ?? product.image,
-  };
+  const out: any = { ...product };
+  if (o.name_override) out.name = o.name_override;
+  if (o.price_override) out.price = o.price_override;
+  if (o.image_url) out.image = o.image_url;
+  if (o.description_override) out.description = o.description_override;
+  if (o.origin_override) out.origin = o.origin_override;
+  if (o.material_override) out.material = o.material_override;
+  if (o.craftsmanship_override) out.craftsmanship = o.craftsmanship_override;
+  if (o.certification_override) out.certification = o.certification_override;
+  if (o.delivery_time_override) out.deliveryTime = o.delivery_time_override;
+  if (o.purity_override) out.purity = o.purity_override;
+  if (o.carat_override) out.carat = o.carat_override;
+  if (o.weight_override) out.weight = o.weight_override;
+  if (o.clarity_override) out.clarity = o.clarity_override;
+  return out;
 };
