@@ -463,6 +463,36 @@ const AddProductForm = ({ onAdded }: { onAdded: () => void }) => {
   const [clarity, setClarity] = useState("");
   const [tag, setTag] = useState("");
   const [busy, setBusy] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+
+  const autoFill = async () => {
+    if (!name.trim()) return toast.error("Enter a product name first");
+    setAiBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-product-details", {
+        body: { name: name.trim(), category, price: price.trim() || undefined },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const d = data?.details ?? {};
+      if (d.description) setDescription(d.description);
+      if (d.origin) setOrigin(d.origin);
+      if (d.material) setMaterial(d.material);
+      if (d.craftsmanship) setCraftsmanship(d.craftsmanship);
+      if (d.certification) setCertification(d.certification);
+      if (d.delivery_time) setDeliveryTime(d.delivery_time);
+      if (d.purity) setPurity(d.purity);
+      if (d.carat) setCarat(d.carat);
+      if (d.weight) setWeight(d.weight);
+      if (d.clarity) setClarity(d.clarity);
+      if (d.tag) setTag(d.tag);
+      toast.success("Details auto-filled — review and edit before adding");
+    } catch (e: any) {
+      toast.error(e.message ?? "Auto-fill failed");
+    } finally {
+      setAiBusy(false);
+    }
+  };
 
   const submit = async () => {
     if (!name.trim() || !price.trim()) return toast.error("Name and price are required");
@@ -540,6 +570,18 @@ const AddProductForm = ({ onAdded }: { onAdded: () => void }) => {
       <Button onClick={submit} disabled={busy} className="bg-primary text-primary-foreground hover:bg-gold-dark">
         <Plus className="w-4 h-4 mr-1" /> {busy ? "Adding…" : "Add product to site"}
       </Button>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={autoFill}
+        disabled={aiBusy || !name.trim()}
+        className="ml-2 border-primary/40 text-primary hover:bg-primary/10"
+      >
+        {aiBusy ? "Generating…" : "✨ Auto-fill with AI"}
+      </Button>
+      <p className="text-[11px] text-muted-foreground mt-1">
+        Tip: type the product name (and optionally price), click <strong>Auto-fill with AI</strong>, then upload the photo and add it to the site.
+      </p>
     </div>
   );
 };
