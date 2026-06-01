@@ -13,6 +13,7 @@ import CallUsDialog from "@/components/CallUsDialog";
 import { categories, type CategoryItem } from "@/data/categories";
 import { useProductOverrides, applyOverride } from "@/hooks/useProductOverrides";
 import { useCustomProducts, toProduct } from "@/hooks/useCustomProducts";
+import { useDeletedProducts } from "@/hooks/useDeletedProducts";
 
 type SortMode = "featured" | "price-asc" | "price-desc" | "name";
 type TypeFilter = "all" | "Gold" | "Diamond";
@@ -31,6 +32,7 @@ const CategoryPage = () => {
   const data = slug ? categories[slug] : undefined;
   const overrides = useProductOverrides();
   const customForCategory = useCustomProducts(slug);
+  const deleted = useDeletedProducts();
 
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [priceFilter, setPriceFilter] = useState<PriceFilter>("all");
@@ -54,7 +56,7 @@ const CategoryPage = () => {
       priceValue: Number(String(r.price).replace(/[^\d.]/g, "")) || 0,
       type: (r.carat || r.clarity) ? "Diamond" : "Gold",
     }));
-    let list = [...customItems, ...data.items.map((i) => applyOverride(i, overrides))].filter(
+    let list = [...customItems, ...data.items.filter((i) => !deleted.has(i.id)).map((i) => applyOverride(i, overrides))].filter(
       (i) =>
         (typeFilter === "all" || i.type === typeFilter) &&
         PRICE_RANGES[priceFilter](i.priceValue)
@@ -63,7 +65,7 @@ const CategoryPage = () => {
     else if (sort === "price-desc") list = [...list].sort((a, b) => b.priceValue - a.priceValue);
     else if (sort === "name") list = [...list].sort((a, b) => a.name.localeCompare(b.name));
     return list;
-  }, [data, typeFilter, priceFilter, sort, overrides, customForCategory]);
+  }, [data, typeFilter, priceFilter, sort, overrides, customForCategory, deleted]);
 
   if (!data) return <Navigate to="/404" replace />;
 
