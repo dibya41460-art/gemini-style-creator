@@ -3,13 +3,15 @@ import { featuredProducts, type Product } from "@/data/products";
 import ProductDetailModal from "@/components/ProductDetailModal";
 import { useProductOverrides, applyOverride } from "@/hooks/useProductOverrides";
 import { useCustomProducts, toProduct } from "@/hooks/useCustomProducts";
+import { useDeletedProducts } from "@/hooks/useDeletedProducts";
 
 const FeaturedProducts = () => {
   const overrides = useProductOverrides();
+  const deleted = useDeletedProducts();
   const custom = useCustomProducts("featured");
   const products = useMemo(
-    () => [...(custom as any[]).map(toProduct), ...featuredProducts.map((p) => applyOverride(p, overrides))],
-    [overrides, custom]
+    () => [...(custom as any[]).map(toProduct), ...featuredProducts.filter((p) => !deleted.has(p.id)).map((p) => applyOverride(p, overrides))],
+    [overrides, custom, deleted]
   );
   const [selected, setSelected] = useState<Product | null>(null);
 

@@ -8,6 +8,8 @@ import NotFound from "./pages/NotFound.tsx";
 import CategoryPage from "./pages/CategoryPage.tsx";
 import Auth from "./pages/Auth.tsx";
 import Admin from "./pages/Admin.tsx";
+import CancelAppointment from "./pages/CancelAppointment.tsx";
+import HelpCenter from "./pages/HelpCenter.tsx";
 import ThemeApplier from "./components/ThemeApplier";
 
 const queryClient = new QueryClient();
@@ -24,6 +26,8 @@ const App = () => (
           <Route path="/category/:slug" element={<CategoryPage />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/cancel-appointment" element={<CancelAppointment />} />
+          <Route path="/help-center" element={<HelpCenter />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

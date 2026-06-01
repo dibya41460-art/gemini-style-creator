@@ -14,10 +14,49 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_product_generations: {
+        Row: {
+          category: string
+          created_at: string
+          details: Json
+          id: string
+          price: string | null
+          product_name: string
+          source_image_url: string | null
+          target_region: string | null
+          tone: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          price?: string | null
+          product_name: string
+          source_image_url?: string | null
+          target_region?: string | null
+          tone?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          price?: string | null
+          product_name?: string
+          source_image_url?: string | null
+          target_region?: string | null
+          tone?: string
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           appointment_date: string
           appointment_time: string
+          cancel_token: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
           created_at: string
           id: string
           is_read: boolean
@@ -26,10 +65,14 @@ export type Database = {
           phone: string
           product_name: string | null
           reference: string
+          status: string
         }
         Insert: {
           appointment_date: string
           appointment_time: string
+          cancel_token?: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
@@ -38,10 +81,14 @@ export type Database = {
           phone: string
           product_name?: string | null
           reference: string
+          status?: string
         }
         Update: {
           appointment_date?: string
           appointment_time?: string
+          cancel_token?: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
@@ -50,6 +97,43 @@ export type Database = {
           phone?: string
           product_name?: string | null
           reference?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      complaints: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          id: string
+          name: string | null
+          phone: string
+          reason: string
+          reference: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          name?: string | null
+          phone: string
+          reason: string
+          reference?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          name?: string | null
+          phone?: string
+          reason?: string
+          reference?: string | null
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -119,6 +203,51 @@ export type Database = {
           tag?: string | null
           updated_at?: string
           weight?: string | null
+        }
+        Relationships: []
+      }
+      deleted_products: {
+        Row: {
+          deleted_at: string
+          product_id: string
+        }
+        Insert: {
+          deleted_at?: string
+          product_id: string
+        }
+        Update: {
+          deleted_at?: string
+          product_id?: string
+        }
+        Relationships: []
+      }
+      gold_rates: {
+        Row: {
+          currency: string
+          fetched_at: string
+          id: string
+          rate_per_gram: number
+          rate_per_vori: number | null
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          currency?: string
+          fetched_at?: string
+          id?: string
+          rate_per_gram: number
+          rate_per_vori?: number | null
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          currency?: string
+          fetched_at?: string
+          id?: string
+          rate_per_gram?: number
+          rate_per_vori?: number | null
+          source?: string
+          updated_at?: string
         }
         Relationships: []
       }

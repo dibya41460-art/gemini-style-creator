@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "customers cancel own appointment" ON public.appointments;

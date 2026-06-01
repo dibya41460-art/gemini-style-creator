@@ -3,13 +3,15 @@ import { goldProducts, type Product } from "@/data/products";
 import ProductDetailModal from "@/components/ProductDetailModal";
 import { useProductOverrides, applyOverride } from "@/hooks/useProductOverrides";
 import { useCustomProducts, toProduct } from "@/hooks/useCustomProducts";
+import { useDeletedProducts } from "@/hooks/useDeletedProducts";
 
 const GoldSection = () => {
   const overrides = useProductOverrides();
+  const deleted = useDeletedProducts();
   const custom = useCustomProducts("gold");
   const products = useMemo(
-    () => [...(custom as any[]).map(toProduct), ...goldProducts.map((p) => applyOverride(p, overrides))],
-    [overrides, custom]
+    () => [...(custom as any[]).map(toProduct), ...goldProducts.filter((p) => !deleted.has(p.id)).map((p) => applyOverride(p, overrides))],
+    [overrides, custom, deleted]
   );
   const [selected, setSelected] = useState<Product | null>(null);
 
