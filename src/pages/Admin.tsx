@@ -143,7 +143,7 @@ const ShopInfoForm = ({ initial, onSaved }: { initial: any; onSaved: () => void 
     onSaved();
   };
   const fields = ["shop_name", "shop_tagline", "phone", "phone_tel", "whatsapp", "address", "address_short", "email", "hours", "footer_about"];
-  return <div className="bg-card border border-border rounded-xl p-6 space-y-4">{fields.map((k) => <div key={k} className="space-y-1.5"><Label className="capitalize">{k.replaceAll("_", " ")}</Label>{k === "footer_about" ? <Textarea value={form?.[k] ?? ""} onChange={(e) => update(k, e.target.value)} rows={3} /> : <Input value={form?.[k] ?? ""} onChange={(e) => update(k, e.target.value)} />}</div>)}<Button onClick={save} disabled={busy} className="bg-primary text-primary-foreground hover:bg-gold-dark"><Save className="w-4 h-4 mr-2" />{busy ? "Saving…" : "Save changes"}</Button></div>;
+  return <div className="bg-card border border-border rounded-xl p-6 space-y-4">{fields.map((k) => <div key={k} className="space-y-1.5"><Label className="capitalize">{k.replace(/_/g, " ")}</Label>{k === "footer_about" ? <Textarea value={form?.[k] ?? ""} onChange={(e) => update(k, e.target.value)} rows={3} /> : <Input value={form?.[k] ?? ""} onChange={(e) => update(k, e.target.value)} />}</div>)}<Button onClick={save} disabled={busy} className="bg-primary text-primary-foreground hover:bg-gold-dark"><Save className="w-4 h-4 mr-2" />{busy ? "Saving…" : "Save changes"}</Button></div>;
 };
 
 const ProductsManager = ({ overrides, onChanged, onCustomChanged }: { overrides: Map<string, any>; onChanged: () => void; onCustomChanged: () => void }) => {
