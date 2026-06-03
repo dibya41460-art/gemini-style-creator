@@ -291,10 +291,94 @@ const ComplaintsList = ({ complaints, onChanged }: { complaints: any[]; onChange
   return <div className="space-y-3">{complaints.map((c) => <div key={c.id} className="bg-card border border-border rounded-lg p-4"><div className="flex flex-wrap items-center gap-2"><span className="font-medium">{c.name || "Customer"}</span><span className="text-xs text-muted-foreground">{c.phone}</span><span className="text-[10px] uppercase bg-muted rounded px-2 py-0.5">{c.status}</span>{c.reference && <span className="text-xs text-muted-foreground">Ref {c.reference}</span>}</div><p className="text-sm text-muted-foreground mt-2">{c.reason}</p><div className="flex gap-2 mt-3"><Button size="sm" variant="outline" onClick={() => update(c.id, "in_progress")}>In progress</Button><Button size="sm" variant="outline" onClick={() => update(c.id, "resolved")}>Resolved</Button></div></div>)}</div>;
 };
 
+type ChatMsg = { role: "user" | "assistant"; content: string };
+const SUGGESTED_PROMPTS = [
+  "Suggest 3 product descriptions for a 22K gold bridal haar.",
+  "Draft a polite reply to a customer complaint about late delivery.",
+  "What jewelry trends should I feature this month in Bangladesh?",
+  "Give me pricing ideas for a new diamond solitaire ring.",
+];
+
 const AdminAssistant = ({ appointments, complaints }: { appointments: number; complaints: number }) => {
-  const [input, setInput] = useState(""); const [answer, setAnswer] = useState(""); const [busy, setBusy] = useState(false);
-  const ask = async () => { if (!input.trim()) return; setBusy(true); setAnswer(""); const { data, error } = await supabase.functions.invoke("admin-assistant", { body: { message: input, context: { appointments, openComplaints: complaints } } }); setBusy(false); if (error || data?.error) return toast.error(error?.message ?? data.error); setAnswer(data.answer); };
-  return <div className="bg-card border border-border rounded-xl p-6 space-y-4"><h2 className="font-display text-lg text-primary flex items-center gap-2"><Bot className="w-5 h-5" /> Admin AI Assistant</h2><Textarea value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask for product suggestions, complaint replies, pricing advice, or dashboard help…" rows={4} /><Button onClick={ask} disabled={busy} className="bg-primary text-primary-foreground hover:bg-gold-dark"><Wand2 className="w-4 h-4 mr-2" />{busy ? "Thinking…" : "Ask assistant"}</Button>{answer && <div className="bg-background border border-border rounded-lg p-4 whitespace-pre-wrap text-sm text-muted-foreground">{answer}</div>}</div>;
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  const send = async (text?: string) => {
+    const msg = (text ?? input).trim();
+    if (!msg || busy) return;
+    const history = messages;
+    const next: ChatMsg[] = [...history, { role: "user", content: msg }];
+    setMessages(next);
+    setInput("");
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke("admin-assistant", {
+      body: { message: msg, history, context: { appointments, openComplaints: complaints } },
+    });
+    setBusy(false);
+    if (error || data?.error) {
+      toast.error(error?.message ?? data?.error ?? "Assistant failed");
+      setMessages((m) => [...m, { role: "assistant", content: "Sorry — I couldn't reply just now. Please try again." }]);
+      return;
+    }
+    setMessages((m) => [...m, { role: "assistant", content: data.answer ?? "" }]);
+  };
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <h2 className="font-display text-lg text-primary flex items-center gap-2"><Bot className="w-5 h-5" /> Admin AI Assistant</h2>
+        {messages.length > 0 && (
+          <Button size="sm" variant="ghost" onClick={() => setMessages([])}><RotateCcw className="w-3 h-3 mr-1" /> New chat</Button>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">Chat with the assistant to research jewelry trends, draft product copy, plan promotions, or get reply suggestions. It remembers this conversation.</p>
+
+      <div className="min-h-[300px] max-h-[460px] overflow-y-auto bg-background border border-border rounded-lg p-3 space-y-3">
+        {messages.length === 0 && !busy && (
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">Try one of these to get started:</p>
+            <div className="flex flex-wrap gap-2">
+              {SUGGESTED_PROMPTS.map((p) => (
+                <button key={p} onClick={() => send(p)} className="text-xs text-left border border-border hover:border-primary rounded-md px-3 py-2 bg-card text-foreground">
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {messages.map((m, i) => (
+          <div key={i} className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+            {m.role === "assistant" && <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0"><Bot className="w-4 h-4" /></div>}
+            <div className={`rounded-lg px-3 py-2 max-w-[85%] text-sm ${m.role === "user" ? "bg-primary text-primary-foreground" : "bg-card border border-border text-foreground"}`}>
+              {m.role === "assistant" ? (
+                <div className="prose prose-sm max-w-none prose-headings:text-primary prose-strong:text-foreground prose-p:my-1 prose-ul:my-1 prose-li:my-0">
+                  <ReactMarkdown>{m.content || "…"}</ReactMarkdown>
+                </div>
+              ) : (
+                <span className="whitespace-pre-wrap">{m.content}</span>
+              )}
+            </div>
+            {m.role === "user" && <div className="w-7 h-7 rounded-full bg-muted text-foreground flex items-center justify-center shrink-0"><UserIcon className="w-4 h-4" /></div>}
+          </div>
+        ))}
+        {busy && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground"><RefreshCw className="w-3 h-3 animate-spin" /> Assistant is thinking…</div>
+        )}
+      </div>
+
+      <div className="flex gap-2 items-end">
+        <Textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask anything — product ideas, descriptions, complaint replies, trend research…"
+          rows={2}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
+        />
+        <Button onClick={() => send()} disabled={busy || !input.trim()} className="bg-primary text-primary-foreground hover:bg-gold-dark"><Send className="w-4 h-4 mr-1" /> Send</Button>
+      </div>
+    </div>
+  );
 };
 
 const HelpPanel = () => <div className="bg-card border border-border rounded-xl p-6 space-y-4 text-sm text-muted-foreground"><h2 className="font-display text-lg text-primary">Quick guide</h2><ul className="list-disc pl-5 space-y-2"><li>Product, theme, gold rate, appointment, and complaint changes are stored in the database, so they stay after laptop restart.</li><li>Use Products & Photos to add products, AI-generate details, hide template products, or delete custom products.</li><li>Use Appointments to copy or send the cancellation link to the customer number.</li></ul></div>;
