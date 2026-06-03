@@ -10,10 +10,17 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { message, context } = await req.json();
+    const { message, context, history } = await req.json();
     if (!message || String(message).trim().length < 2) return json({ error: "Please type a question for the assistant." }, 400);
     const key = Deno.env.get("LOVABLE_API_KEY");
     if (!key) throw new Error("AI assistant is not configured.");
+
+    const priorTurns = Array.isArray(history)
+      ? history
+          .filter((m: any) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
+          .slice(-12)
+          .map((m: any) => ({ role: m.role, content: String(m.content).slice(0, 4000) }))
+      : [];
 
     const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -24,9 +31,11 @@ Deno.serve(async (req) => {
           {
             role: "system",
             content:
-              "You are a practical admin assistant for Swastika Jewellers. Help with product descriptions, pricing checks, customer complaints, appointment workflows, and daily operations. Keep answers concise and action-oriented. You can advise, draft text, and suggest steps, but do not claim you directly changed the website unless the admin did it.",
+              "You are a practical admin assistant and research partner for Swastika Jewellers in Chittagong, Bangladesh. Help the admin chat through product ideas, draft descriptions and titles, suggest pricing and promotions, research jewelry trends, draft replies to complaints, and plan content updates. You remember the conversation so far and build on previous turns. Use markdown (bullets, bold, short headings) for clarity. Be concise and action-oriented. You can advise, draft text, and suggest steps, but do not claim you directly changed the website — the admin applies changes themselves.",
           },
-          { role: "user", content: `Dashboard context: ${JSON.stringify(context ?? {})}\n\nAdmin request: ${String(message).slice(0, 2000)}` },
+          { role: "system", content: `Dashboard context: ${JSON.stringify(context ?? {})}` },
+          ...priorTurns,
+          { role: "user", content: String(message).slice(0, 4000) },
         ],
       }),
     });
