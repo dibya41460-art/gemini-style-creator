@@ -127,6 +127,19 @@ const Admin = () => {
           <TabsContent value="help"><HelpPanel /></TabsContent>
         </Tabs>
       </main>
+
+      <button
+        type="button"
+        onClick={() => {
+          setActiveTab("assistant");
+          setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 50);
+        }}
+        aria-label="Open AI Assistant"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all px-5 py-3 font-medium"
+      >
+        <Bot className="w-5 h-5" />
+        <span className="hidden sm:inline">AI Assistant</span>
+      </button>
     </div>
   );
 };
