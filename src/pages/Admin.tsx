@@ -48,6 +48,7 @@ const Admin = () => {
   const { session, isAdmin, loading } = useAuth();
   const settings = useShopSettings();
   const overrides = useProductOverrides();
+  const [activeTab, setActiveTab] = useState("shop");
 
   const { data: appointments = [], refetch: refetchAppointments } = useQuery({
     queryKey: ["appointments"],
