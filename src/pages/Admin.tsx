@@ -104,7 +104,7 @@ const Admin = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-6xl">
-        <Tabs defaultValue="shop">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6 flex flex-wrap h-auto">
             <TabsTrigger value="shop">Shop Info</TabsTrigger>
             <TabsTrigger value="products">Products & Photos</TabsTrigger>
