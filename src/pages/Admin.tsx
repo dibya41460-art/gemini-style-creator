@@ -48,6 +48,7 @@ const Admin = () => {
   const { session, isAdmin, loading } = useAuth();
   const settings = useShopSettings();
   const overrides = useProductOverrides();
+  const [activeTab, setActiveTab] = useState("shop");
 
   const { data: appointments = [], refetch: refetchAppointments } = useQuery({
     queryKey: ["appointments"],
@@ -104,7 +105,7 @@ const Admin = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-6xl">
-        <Tabs defaultValue="shop">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6 flex flex-wrap h-auto">
             <TabsTrigger value="shop">Shop Info</TabsTrigger>
             <TabsTrigger value="products">Products & Photos</TabsTrigger>
@@ -126,6 +127,19 @@ const Admin = () => {
           <TabsContent value="help"><HelpPanel /></TabsContent>
         </Tabs>
       </main>
+
+      <button
+        type="button"
+        onClick={() => {
+          setActiveTab("assistant");
+          setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 50);
+        }}
+        aria-label="Open AI Assistant"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all px-5 py-3 font-medium"
+      >
+        <Bot className="w-5 h-5" />
+        <span className="hidden sm:inline">AI Assistant</span>
+      </button>
     </div>
   );
 };
