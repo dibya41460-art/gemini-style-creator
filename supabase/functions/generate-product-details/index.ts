@@ -1,4 +1,6 @@
 // Auto-generate jewelry details and optional product image using Lovable AI
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.106.1";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -7,15 +9,45 @@ const corsHeaders = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+const ALLOWED_CATEGORIES = new Set(["featured", "gold", "diamond", "bridal", "general"]);
+const ALLOWED_TONES = new Set(["premium", "traditional", "modern", "bridal"]);
+const clean = (v: unknown, max: number) =>
+  typeof v === "string" ? v.replace(/[\u0000-\u001F\u007F]/g, " ").slice(0, max).trim() : "";
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { name, category, price, imageDataUrl, tone = "premium", targetRegion, generateImage = false } = await req.json();
-    if (!name) return json({ error: "name is required" }, 400);
-
+    const url = Deno.env.get("SUPABASE_URL");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    if (!url || !anonKey || !serviceKey || !LOVABLE_API_KEY) throw new Error("Service is not configured");
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
+    const token = authHeader.slice(7);
+    const userClient = createClient(url, anonKey, { global: { headers: { Authorization: authHeader } } });
+    const { data: userData, error: userErr } = await userClient.auth.getUser(token);
+    if (userErr || !userData?.user) return json({ error: "Unauthorized" }, 401);
+    const admin = createClient(url, serviceKey);
+    const { data: roleRow } = await admin
+      .from("user_roles").select("role").eq("user_id", userData.user.id).eq("role", "admin").maybeSingle();
+    if (!roleRow) return json({ error: "Admin access required." }, 403);
+
+    const body = await req.json();
+    const name = clean(body?.name, 200);
+    if (!name) return json({ error: "name is required" }, 400);
+    const rawCategory = clean(body?.category, 40).toLowerCase();
+    const category = ALLOWED_CATEGORIES.has(rawCategory) ? rawCategory : "general";
+    const price = clean(body?.price, 40);
+    const rawTone = clean(body?.tone, 40).toLowerCase() || "premium";
+    const tone = ALLOWED_TONES.has(rawTone) ? rawTone : "premium";
+    const targetRegion = clean(body?.targetRegion, 100);
+    const generateImage = body?.generateImage === true;
+    const imageDataUrl = typeof body?.imageDataUrl === "string" && body.imageDataUrl.startsWith("data:image/")
+      ? body.imageDataUrl.slice(0, 8_000_000)
+      : undefined;
 
     const isDiamond = category === "diamond" || /diamond|solitaire/i.test(name);
     const isGold = category === "gold" || /gold|coin|bangle|chain|haar|kada/i.test(name);
