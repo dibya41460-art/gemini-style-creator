@@ -2,9 +2,15 @@ import { useState } from "react";
 import heroImg from "@/assets/hero-jewelry.jpg";
 import { Button } from "@/components/ui/button";
 import AppointmentDialog from "@/components/AppointmentDialog";
+import { useGoldRate } from "@/hooks/useGoldRate";
 
 const HeroSection = () => {
   const [bookOpen, setBookOpen] = useState(false);
+  const { data: goldRate } = useGoldRate();
+  const per24 = goldRate?.rate_per_gram ?? null;
+  const per22 = per24 != null ? per24 * (22 / 24) : null;
+  const fmt = (n: number) =>
+    "৳" + Math.round(n).toLocaleString("en-IN") + "/gm";
 
   const scrollToCollections = () => {
     document.getElementById("collections")?.scrollIntoView({ behavior: "smooth" });
@@ -54,8 +60,12 @@ const HeroSection = () => {
         <div className="container mx-auto px-4 flex items-center justify-between text-sm font-body">
           <div className="flex items-center gap-8">
             <span className="text-muted-foreground tracking-wider">TODAY'S GOLD RATE</span>
-            <span className="text-primary font-semibold">22K: ৳6,250/gm</span>
-            <span className="text-primary font-semibold hidden sm:inline">24K: ৳6,820/gm</span>
+            <span className="text-primary font-semibold">
+              22K: {per22 != null ? fmt(per22) : "—"}
+            </span>
+            <span className="text-primary font-semibold hidden sm:inline">
+              24K: {per24 != null ? fmt(per24) : "—"}
+            </span>
           </div>
           <span className="text-muted-foreground text-xs hidden md:inline">*Rates updated daily</span>
         </div>
