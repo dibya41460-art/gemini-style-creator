@@ -239,16 +239,31 @@ const AddProductForm = ({ onAdded }: { onAdded: () => void }) => {
   const [description, setDescription] = useState(""); const [origin, setOrigin] = useState(""); const [material, setMaterial] = useState(""); const [craftsmanship, setCraftsmanship] = useState(""); const [certification, setCertification] = useState(""); const [deliveryTime, setDeliveryTime] = useState(""); const [purity, setPurity] = useState(""); const [carat, setCarat] = useState(""); const [weight, setWeight] = useState(""); const [clarity, setClarity] = useState(""); const [tag, setTag] = useState("");
   const [busy, setBusy] = useState(false); const [aiBusy, setAiBusy] = useState(false); const [aiProgress, setAiProgress] = useState(0); const [aiError, setAiError] = useState(""); const [history, setHistory] = useState<any[]>([]); const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const setters = { description: setDescription, origin: setOrigin, material: setMaterial, craftsmanship: setCraftsmanship, certification: setCertification, deliveryTime: setDeliveryTime, purity: setPurity, carat: setCarat, weight: setWeight, clarity: setClarity, tag: setTag };
+  const aiRunId = useRef(0);
+
+  const clearAiOutputs = () => {
+    setGeneratedImage(null); setAiError(""); setAiProgress(0); setHistory([]);
+    setDescription(""); setOrigin(""); setMaterial(""); setCraftsmanship(""); setCertification(""); setDeliveryTime(""); setPurity(""); setCarat(""); setWeight(""); setClarity(""); setTag("");
+  };
+  const cancelAll = () => {
+    aiRunId.current += 1; // invalidate any in-flight AI response
+    setAiBusy(false); setBusy(false);
+    setName(""); setPrice(""); setFile(null); setCategory("featured"); setTone("premium"); setTargetRegion(""); setUseAiImage(false);
+    clearAiOutputs();
+    toast.success("Cancelled — form cleared");
+  };
 
   const autoFill = async () => {
     if (!name.trim()) return toast.error("Enter a product name first");
     if (!file && !useAiImage) return toast.error("Upload a photo for photo-based AI, or switch on AI image generation");
     setAiBusy(true); setAiError(""); setAiProgress(12);
+    const runId = ++aiRunId.current;
     const timer = window.setInterval(() => setAiProgress((p) => Math.min(92, p + 8)), 700);
     try {
       const imageDataUrl = file ? await fileToDataUrl(file) : undefined;
       setAiProgress(35);
       const { data, error } = await supabase.functions.invoke("generate-product-details", { body: { name: name.trim(), category, price: price.trim() || undefined, imageDataUrl, tone, targetRegion: targetRegion.trim() || undefined, generateImage: useAiImage && !file } });
+      if (runId !== aiRunId.current) return; // cancelled
       if (error) throw error; if (data?.error) throw new Error(data.error);
       setAiProgress(100);
       const d = data?.details ?? {}; setDetails(d, setters); if (data?.generatedImage) setGeneratedImage(data.generatedImage);
@@ -256,9 +271,10 @@ const AddProductForm = ({ onAdded }: { onAdded: () => void }) => {
       await (supabase as any).from("ai_product_generations").insert({ product_name: name.trim(), category, price: price.trim() || null, tone, target_region: targetRegion.trim() || null, source_image_url: file ? file.name : data?.generatedImage ? "AI generated image" : null, details: d });
       toast.success("AI suggestions ready — compare, edit, then save");
     } catch (e: any) {
+      if (runId !== aiRunId.current) return;
       const message = e.message?.includes("timeout") ? "AI timed out. Please retry or use a smaller image." : e.message ?? "AI auto-fill failed";
       setAiError(message); toast.error(message);
-    } finally { clearInterval(timer); setAiBusy(false); window.setTimeout(() => setAiProgress(0), 1200); }
+    } finally { clearInterval(timer); if (runId === aiRunId.current) { setAiBusy(false); window.setTimeout(() => setAiProgress(0), 1200); } }
   };
 
   const submit = async () => {
