@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { AlertCircle, Bell, Bot, Check, ChevronDown, ChevronUp, DollarSign, HelpCircle, LogOut, MessageSquare, Phone, Plus, RefreshCw, RotateCcw, Save, Search, Send, Sparkles, Trash2, Upload, User as UserIcon, Wand2 } from "lucide-react";
+import { AlertCircle, Bell, Bot, Check, ChevronDown, ChevronUp, DollarSign, HelpCircle, LogOut, MessageSquare, Phone, Plus, RefreshCw, RotateCcw, Save, Search, Send, Sparkles, Trash2, Upload, User as UserIcon, Wand2, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 const CATEGORY_OPTIONS = [
