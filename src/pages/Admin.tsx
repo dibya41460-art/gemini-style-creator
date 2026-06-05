@@ -322,6 +322,7 @@ const ComplaintsList = ({ complaints, onChanged }: { complaints: any[]; onChange
 };
 
 type ChatMsg = { role: "user" | "assistant"; content: string };
+type ChatSession = { id: string; title: string; updated_at: string; created_at: string };
 const SUGGESTED_PROMPTS = [
   "Suggest 3 product descriptions for a 22K gold bridal haar.",
   "Draft a polite reply to a customer complaint about late delivery.",
@@ -329,83 +330,229 @@ const SUGGESTED_PROMPTS = [
   "Give me pricing ideas for a new diamond solitaire ring.",
 ];
 
+const groupSessionsByDate = (sessions: ChatSession[]) => {
+  const now = new Date();
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const today = startOfDay(now);
+  const yesterday = today - 86_400_000;
+  const sevenDaysAgo = today - 7 * 86_400_000;
+  const groups: Record<string, ChatSession[]> = { Today: [], Yesterday: [], "Previous 7 Days": [], Older: [] };
+  for (const s of sessions) {
+    const t = new Date(s.updated_at).getTime();
+    if (t >= today) groups.Today.push(s);
+    else if (t >= yesterday) groups.Yesterday.push(s);
+    else if (t >= sevenDaysAgo) groups["Previous 7 Days"].push(s);
+    else groups.Older.push(s);
+  }
+  return groups;
+};
+
 const AdminAssistant = ({ appointments, complaints }: { appointments: number; complaints: number }) => {
+  const { session } = useAuth();
+  const userId = session?.user?.id;
+  const qc = useQueryClient();
   const [input, setInput] = useState("");
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [busy, setBusy] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  const { data: sessions = [] } = useQuery<ChatSession[]>({
+    queryKey: ["chat_sessions", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("chat_sessions")
+        .select("id,title,updated_at,created_at")
+        .order("updated_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as ChatSession[];
+    },
+  });
+
+  const refreshSessions = () => qc.invalidateQueries({ queryKey: ["chat_sessions", userId] });
+  const grouped = useMemo(() => groupSessionsByDate(sessions), [sessions]);
+
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages, busy]);
+
+  const loadSession = async (id: string) => {
+    setActiveSessionId(id);
+    const { data, error } = await supabase
+      .from("chat_messages")
+      .select("role,content")
+      .eq("session_id", id)
+      .order("created_at", { ascending: true });
+    if (error) { toast.error(error.message); return; }
+    setMessages(((data ?? []) as any[]).map((m) => ({ role: m.role, content: m.content })));
+  };
+
+  const startNewChat = () => {
+    setActiveSessionId(null);
+    setMessages([]);
+    setInput("");
+  };
+
+  const deleteSession = async (id: string) => {
+    if (!confirm("Delete this chat?")) return;
+    const { error } = await supabase.from("chat_sessions").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    if (activeSessionId === id) startNewChat();
+    refreshSessions();
+  };
+
+  const autoTitle = async (sessionId: string, convo: ChatMsg[]) => {
+    try {
+      const { data } = await supabase.functions.invoke("admin-assistant", {
+        body: { mode: "title", history: convo },
+      });
+      const title = (data?.title ?? "").trim();
+      if (!title) return;
+      await supabase.from("chat_sessions").update({ title }).eq("id", sessionId);
+      refreshSessions();
+    } catch { /* ignore titling failures */ }
+  };
 
   const send = async (text?: string) => {
     const msg = (text ?? input).trim();
-    if (!msg || busy) return;
-    const history = messages;
-    const next: ChatMsg[] = [...history, { role: "user", content: msg }];
-    setMessages(next);
-    setInput("");
+    if (!msg || busy || !userId) return;
     setBusy(true);
+    setInput("");
+
+    let sessionId = activeSessionId;
+    let isFirstMessage = false;
+    if (!sessionId) {
+      const { data, error } = await supabase
+        .from("chat_sessions")
+        .insert({ user_id: userId, title: "New chat" })
+        .select("id")
+        .single();
+      if (error || !data) { setBusy(false); toast.error(error?.message ?? "Could not start chat"); return; }
+      sessionId = data.id;
+      setActiveSessionId(sessionId);
+      isFirstMessage = true;
+      refreshSessions();
+    }
+
+    const history = messages;
+    const optimistic: ChatMsg[] = [...history, { role: "user", content: msg }];
+    setMessages(optimistic);
+
+    await supabase.from("chat_messages").insert({ session_id: sessionId, user_id: userId, role: "user", content: msg });
+
     const { data, error } = await supabase.functions.invoke("admin-assistant", {
       body: { message: msg, history, context: { appointments, openComplaints: complaints } },
     });
     setBusy(false);
+
+    let answer = "";
     if (error || data?.error) {
+      answer = "Sorry — I couldn't reply just now. Please try again.";
       toast.error(error?.message ?? data?.error ?? "Assistant failed");
-      setMessages((m) => [...m, { role: "assistant", content: "Sorry — I couldn't reply just now. Please try again." }]);
-      return;
+    } else {
+      answer = data.answer ?? "";
     }
-    setMessages((m) => [...m, { role: "assistant", content: data.answer ?? "" }]);
+    setMessages((m) => [...m, { role: "assistant", content: answer }]);
+    await supabase.from("chat_messages").insert({ session_id: sessionId, user_id: userId, role: "assistant", content: answer });
+    await supabase.from("chat_sessions").update({ updated_at: new Date().toISOString() }).eq("id", sessionId);
+    refreshSessions();
+
+    // Auto-title after first user+assistant exchange, or refine after the 2nd exchange.
+    const turnCount = optimistic.length + 1; // includes new assistant reply
+    if (isFirstMessage || turnCount === 4) {
+      void autoTitle(sessionId, [...optimistic, { role: "assistant", content: answer }]);
+    }
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl p-6 space-y-4">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <h2 className="font-display text-lg text-primary flex items-center gap-2"><Bot className="w-5 h-5" /> Admin AI Assistant</h2>
-        {messages.length > 0 && (
-          <Button size="sm" variant="ghost" onClick={() => setMessages([])}><RotateCcw className="w-3 h-3 mr-1" /> New chat</Button>
-        )}
-      </div>
-      <p className="text-xs text-muted-foreground">Chat with the assistant to research jewelry trends, draft product copy, plan promotions, or get reply suggestions. It remembers this conversation.</p>
-
-      <div className="min-h-[300px] max-h-[460px] overflow-y-auto bg-background border border-border rounded-lg p-3 space-y-3">
-        {messages.length === 0 && !busy && (
-          <div className="space-y-3">
-            <p className="text-xs text-muted-foreground">Try one of these to get started:</p>
-            <div className="flex flex-wrap gap-2">
-              {SUGGESTED_PROMPTS.map((p) => (
-                <button key={p} onClick={() => send(p)} className="text-xs text-left border border-border hover:border-primary rounded-md px-3 py-2 bg-card text-foreground">
-                  {p}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {messages.map((m, i) => (
-          <div key={i} className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-            {m.role === "assistant" && <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0"><Bot className="w-4 h-4" /></div>}
-            <div className={`rounded-lg px-3 py-2 max-w-[85%] text-sm ${m.role === "user" ? "bg-primary text-primary-foreground" : "bg-card border border-border text-foreground"}`}>
-              {m.role === "assistant" ? (
-                <div className="prose prose-sm max-w-none prose-headings:text-primary prose-strong:text-foreground prose-p:my-1 prose-ul:my-1 prose-li:my-0">
-                  <ReactMarkdown>{m.content || "…"}</ReactMarkdown>
+    <div className="bg-card border border-border rounded-xl overflow-hidden flex flex-col md:flex-row min-h-[560px]">
+      {/* Sidebar */}
+      <aside className={`${sidebarOpen ? "block" : "hidden"} md:block md:w-64 shrink-0 border-b md:border-b-0 md:border-r border-border bg-background/40`}>
+        <div className="p-3 border-b border-border flex items-center gap-2">
+          <Button size="sm" onClick={startNewChat} className="flex-1 bg-primary text-primary-foreground hover:bg-gold-dark">
+            <Plus className="w-4 h-4 mr-1" /> New chat
+          </Button>
+          <Button size="sm" variant="ghost" className="md:hidden" onClick={() => setSidebarOpen(false)} aria-label="Hide history"><X className="w-4 h-4" /></Button>
+        </div>
+        <div className="max-h-[480px] overflow-y-auto p-2 space-y-3">
+          {sessions.length === 0 && <p className="text-xs text-muted-foreground px-2 py-3">No chats yet. Send a message to start one.</p>}
+          {(["Today", "Yesterday", "Previous 7 Days", "Older"] as const).map((label) =>
+            grouped[label].length > 0 ? (
+              <div key={label}>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 pb-1">{label}</p>
+                <div className="space-y-0.5">
+                  {grouped[label].map((s) => (
+                    <div key={s.id} className={`group flex items-center gap-1 rounded-md px-2 py-1.5 text-sm cursor-pointer ${activeSessionId === s.id ? "bg-primary/15 text-primary" : "hover:bg-muted/60 text-foreground"}`} onClick={() => loadSession(s.id)}>
+                      <MessageSquare className="w-3.5 h-3.5 shrink-0 opacity-70" />
+                      <span className="flex-1 truncate">{s.title}</span>
+                      <button onClick={(e) => { e.stopPropagation(); void deleteSession(s.id); }} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive shrink-0" aria-label="Delete chat"><Trash2 className="w-3.5 h-3.5" /></button>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <span className="whitespace-pre-wrap">{m.content}</span>
-              )}
-            </div>
-            {m.role === "user" && <div className="w-7 h-7 rounded-full bg-muted text-foreground flex items-center justify-center shrink-0"><UserIcon className="w-4 h-4" /></div>}
-          </div>
-        ))}
-        {busy && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground"><RefreshCw className="w-3 h-3 animate-spin" /> Assistant is thinking…</div>
-        )}
-      </div>
+              </div>
+            ) : null
+          )}
+        </div>
+      </aside>
 
-      <div className="flex gap-2 items-end">
-        <Textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask anything — product ideas, descriptions, complaint replies, trend research…"
-          rows={2}
-          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
-        />
-        <Button onClick={() => send()} disabled={busy || !input.trim()} className="bg-primary text-primary-foreground hover:bg-gold-dark"><Send className="w-4 h-4 mr-1" /> Send</Button>
+      {/* Conversation */}
+      <div className="flex-1 flex flex-col p-4 sm:p-6 gap-3 min-w-0">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h2 className="font-display text-lg text-primary flex items-center gap-2">
+            <Button size="sm" variant="ghost" className="md:hidden" onClick={() => setSidebarOpen((v) => !v)} aria-label="Toggle history"><MessageSquare className="w-4 h-4" /></Button>
+            <Bot className="w-5 h-5" /> Admin AI Assistant
+          </h2>
+          {messages.length > 0 && (
+            <Button size="sm" variant="ghost" onClick={startNewChat}><RotateCcw className="w-3 h-3 mr-1" /> New chat</Button>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">Chat history is saved automatically. Click any past chat to reload it.</p>
+
+        <div ref={scrollRef} className="flex-1 min-h-[300px] max-h-[460px] overflow-y-auto bg-background border border-border rounded-lg p-3 space-y-3">
+          {messages.length === 0 && !busy && (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">Try one of these to get started:</p>
+              <div className="flex flex-wrap gap-2">
+                {SUGGESTED_PROMPTS.map((p) => (
+                  <button key={p} onClick={() => send(p)} className="text-xs text-left border border-border hover:border-primary rounded-md px-3 py-2 bg-card text-foreground">
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {messages.map((m, i) => (
+            <div key={i} className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+              {m.role === "assistant" && <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0"><Bot className="w-4 h-4" /></div>}
+              <div className={`rounded-lg px-3 py-2 max-w-[85%] text-sm ${m.role === "user" ? "bg-primary text-primary-foreground" : "bg-card border border-border text-foreground"}`}>
+                {m.role === "assistant" ? (
+                  <div className="prose prose-sm max-w-none prose-headings:text-primary prose-strong:text-foreground prose-p:my-1 prose-ul:my-1 prose-li:my-0">
+                    <ReactMarkdown>{m.content || "…"}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <span className="whitespace-pre-wrap">{m.content}</span>
+                )}
+              </div>
+              {m.role === "user" && <div className="w-7 h-7 rounded-full bg-muted text-foreground flex items-center justify-center shrink-0"><UserIcon className="w-4 h-4" /></div>}
+            </div>
+          ))}
+          {busy && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground"><RefreshCw className="w-3 h-3 animate-spin" /> Assistant is thinking…</div>
+          )}
+        </div>
+
+        <div className="flex gap-2 items-end">
+          <Textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ask anything — product ideas, descriptions, complaint replies, trend research…"
+            rows={2}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
+          />
+          <Button onClick={() => send()} disabled={busy || !input.trim()} className="bg-primary text-primary-foreground hover:bg-gold-dark"><Send className="w-4 h-4 mr-1" /> Send</Button>
+        </div>
       </div>
     </div>
   );

@@ -38,10 +38,39 @@ Deno.serve(async (req) => {
       .from("user_roles").select("role").eq("user_id", userData.user.id).eq("role", "admin").maybeSingle();
     if (!roleRow) return json({ error: "Admin access required." }, 403);
 
-    const { message, context, history } = await req.json();
-    if (!message || String(message).trim().length < 2) return json({ error: "Please type a question for the assistant." }, 400);
+    const { message, context, history, mode } = await req.json();
     const key = Deno.env.get("LOVABLE_API_KEY");
     if (!key) throw new Error("AI assistant is not configured.");
+
+    // ---- Title generation mode ----
+    if (mode === "title") {
+      const turns = Array.isArray(history)
+        ? history
+            .filter((m: any) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
+            .slice(0, 6)
+            .map((m: any) => `${m.role.toUpperCase()}: ${String(m.content).slice(0, 800)}`)
+            .join("\n")
+        : "";
+      if (!turns) return json({ title: "New chat" });
+      const tResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: "Generate a very short title (max 5 words, no quotes, no trailing punctuation, Title Case) that summarises the user's request in this conversation. Respond with the title only." },
+            { role: "user", content: turns },
+          ],
+        }),
+      });
+      if (!tResp.ok) return json({ title: "New chat" });
+      const tData = await tResp.json();
+      const raw = String(tData.choices?.[0]?.message?.content ?? "").replace(/["'`\n\r]/g, " ").trim();
+      const title = raw.split(/\s+/).slice(0, 6).join(" ").slice(0, 60) || "New chat";
+      return json({ title });
+    }
+
+    if (!message || String(message).trim().length < 2) return json({ error: "Please type a question for the assistant." }, 400);
 
     const priorTurns = Array.isArray(history)
       ? history
