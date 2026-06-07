@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { AlertCircle, Bell, Bot, Check, ChevronDown, ChevronUp, DollarSign, HelpCircle, LogOut, MessageSquare, Phone, Plus, RefreshCw, RotateCcw, Save, Search, Send, Sparkles, Trash2, Upload, User as UserIcon, Wand2, X } from "lucide-react";
+import { AlertCircle, Bell, Bot, Check, ChevronDown, ChevronUp, DollarSign, HelpCircle, LayoutGrid, LogOut, MessageSquare, Pencil, Phone, Plus, RefreshCw, RotateCcw, Save, Search, Send, Sparkles, Trash2, Upload, User as UserIcon, Wand2, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 const CATEGORY_OPTIONS = [
@@ -355,7 +355,7 @@ const AdminAssistant = ({ appointments, complaints }: { appointments: number; co
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [busy, setBusy] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const { data: sessions = [] } = useQuery<ChatSession[]>({
@@ -400,6 +400,14 @@ const AdminAssistant = ({ appointments, complaints }: { appointments: number; co
     const { error } = await supabase.from("chat_sessions").delete().eq("id", id);
     if (error) return toast.error(error.message);
     if (activeSessionId === id) startNewChat();
+    refreshSessions();
+  };
+
+  const renameSession = async (id: string, currentTitle: string) => {
+    const next = window.prompt("Rename chat", currentTitle)?.trim();
+    if (!next || next === currentTitle) return;
+    const { error } = await supabase.from("chat_sessions").update({ title: next.slice(0, 80) }).eq("id", id);
+    if (error) return toast.error(error.message);
     refreshSessions();
   };
 
@@ -467,14 +475,14 @@ const AdminAssistant = ({ appointments, complaints }: { appointments: number; co
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden flex flex-col md:flex-row min-h-[560px]">
+    <div className="bg-card border border-border rounded-xl overflow-hidden flex flex-col md:flex-row min-h-[560px] relative">
       {/* Sidebar */}
-      <aside className={`${sidebarOpen ? "block" : "hidden"} md:block md:w-64 shrink-0 border-b md:border-b-0 md:border-r border-border bg-background/40`}>
+      <aside className={`${sidebarOpen ? "block" : "hidden"} w-full md:w-64 shrink-0 border-b md:border-b-0 md:border-r border-border bg-background/40`}>
         <div className="p-3 border-b border-border flex items-center gap-2">
           <Button size="sm" onClick={startNewChat} className="flex-1 bg-primary text-primary-foreground hover:bg-gold-dark">
             <Plus className="w-4 h-4 mr-1" /> New chat
           </Button>
-          <Button size="sm" variant="ghost" className="md:hidden" onClick={() => setSidebarOpen(false)} aria-label="Hide history"><X className="w-4 h-4" /></Button>
+          <Button size="sm" variant="ghost" onClick={() => setSidebarOpen(false)} aria-label="Hide history"><X className="w-4 h-4" /></Button>
         </div>
         <div className="max-h-[480px] overflow-y-auto p-2 space-y-3">
           {sessions.length === 0 && <p className="text-xs text-muted-foreground px-2 py-3">No chats yet. Send a message to start one.</p>}
@@ -484,11 +492,12 @@ const AdminAssistant = ({ appointments, complaints }: { appointments: number; co
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 pb-1">{label}</p>
                 <div className="space-y-0.5">
                   {grouped[label].map((s) => (
-                    <div key={s.id} className={`group flex items-center gap-1 rounded-md px-2 py-1.5 text-sm cursor-pointer ${activeSessionId === s.id ? "bg-primary/15 text-primary" : "hover:bg-muted/60 text-foreground"}`} onClick={() => loadSession(s.id)}>
-                      <MessageSquare className="w-3.5 h-3.5 shrink-0 opacity-70" />
-                      <span className="flex-1 truncate">{s.title}</span>
-                      <button onClick={(e) => { e.stopPropagation(); void deleteSession(s.id); }} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive shrink-0" aria-label="Delete chat"><Trash2 className="w-3.5 h-3.5" /></button>
-                    </div>
+                     <div key={s.id} className={`group flex items-center gap-1 rounded-md px-2 py-1.5 text-sm cursor-pointer ${activeSessionId === s.id ? "bg-primary/15 text-primary" : "hover:bg-muted/60 text-foreground"}`} onClick={() => loadSession(s.id)}>
+                       <MessageSquare className="w-3.5 h-3.5 shrink-0 opacity-70" />
+                       <span className="flex-1 truncate">{s.title}</span>
+                       <button onClick={(e) => { e.stopPropagation(); void renameSession(s.id, s.title); }} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary shrink-0" aria-label="Rename chat"><Pencil className="w-3.5 h-3.5" /></button>
+                       <button onClick={(e) => { e.stopPropagation(); void deleteSession(s.id); }} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive shrink-0" aria-label="Delete chat"><Trash2 className="w-3.5 h-3.5" /></button>
+                     </div>
                   ))}
                 </div>
               </div>
@@ -501,7 +510,7 @@ const AdminAssistant = ({ appointments, complaints }: { appointments: number; co
       <div className="flex-1 flex flex-col p-4 sm:p-6 gap-3 min-w-0">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <h2 className="font-display text-lg text-primary flex items-center gap-2">
-            <Button size="sm" variant="ghost" className="md:hidden" onClick={() => setSidebarOpen((v) => !v)} aria-label="Toggle history"><MessageSquare className="w-4 h-4" /></Button>
+            <Button size="sm" variant="ghost" onClick={() => setSidebarOpen((v) => !v)} aria-label="Toggle chat history" title="Chat history"><LayoutGrid className="w-4 h-4" /></Button>
             <Bot className="w-5 h-5" /> Admin AI Assistant
           </h2>
           {messages.length > 0 && (
