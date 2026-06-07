@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import type { Product } from "@/data/products";
 import AppointmentDialog from "@/components/AppointmentDialog";
 import { SHOP_PHONE, SHOP_PHONE_TEL } from "@/lib/shop";
+import { incrementInteraction } from "@/hooks/useInteractionCounts";
 
 const generateBookingId = () =>
   "SJ-" + Math.floor(100000 + Math.random() * 900000);
@@ -99,6 +100,7 @@ const ProductDetailModal = ({ product, open, onClose }: ProductDetailModalProps)
               <Button
                 onClick={() => {
                   const id = generateBookingId();
+                  incrementInteraction("enquiry");
                   toast.success("Enquiry placed!", {
                     description: `Ref ${id} for "${product.name}". Our team will call you at ${SHOP_PHONE}.`,
                   });
