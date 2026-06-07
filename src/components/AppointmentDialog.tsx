@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Calendar, CheckCircle2 } from "lucide-react";
 import { useShopSettings } from "@/hooks/useShopSettings";
 import { supabase } from "@/integrations/supabase/client";
+import { incrementInteraction } from "@/hooks/useInteractionCounts";
 
 interface AppointmentDialogProps {
   open: boolean;
@@ -52,6 +53,7 @@ const AppointmentDialog = ({ open, onClose, productName }: AppointmentDialogProp
       toast.error("Could not save booking", { description: error.message });
       return;
     }
+    incrementInteraction("appointment");
     setConfirmed({ id, date: `${formatted} at ${time}` });
     toast.success("Appointment confirmed!", {
       description: `Ref ${id} — we'll call ${phone} to confirm.`,

@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Menu, X, Phone, MapPin, Search, ShoppingBag } from "lucide-react";
+import { Menu, X, Phone, MapPin, Search, Calendar } from "lucide-react";
 import SearchOverlay from "@/components/SearchOverlay";
 import { useShopSettings } from "@/hooks/useShopSettings";
+import { useInteractionCounts } from "@/hooks/useInteractionCounts";
 
 const navLinks = [
   { label: "Home", href: "#hero" },
@@ -16,6 +17,7 @@ const navLinks = [
 
 const Header = () => {
   const shop = useShopSettings();
+  const counts = useInteractionCounts();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -142,10 +144,24 @@ const Header = () => {
             >
               <Search className="w-5 h-5" />
             </button>
-            <button className="relative text-foreground/60 hover:text-primary transition-colors duration-300">
-              <ShoppingBag className="w-5 h-5" />
+            <button
+              title="Enquiries"
+              aria-label={`Enquiries (${counts.enquiry})`}
+              className="relative text-foreground/60 hover:text-primary transition-colors duration-300"
+            >
+              <Phone className="w-5 h-5" />
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent text-accent-foreground text-[9px] font-bold rounded-full flex items-center justify-center">
-                0
+                {counts.enquiry}
+              </span>
+            </button>
+            <button
+              title="Appointments"
+              aria-label={`Appointments (${counts.appointment})`}
+              className="relative text-foreground/60 hover:text-primary transition-colors duration-300"
+            >
+              <Calendar className="w-5 h-5" />
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center">
+                {counts.appointment}
               </span>
             </button>
             <button
