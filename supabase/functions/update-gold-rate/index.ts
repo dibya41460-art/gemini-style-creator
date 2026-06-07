@@ -23,20 +23,51 @@ Deno.serve(async (req) => {
     const lastFetch = existing?.fetched_at ? new Date(existing.fetched_at).getTime() : 0;
     if (existing && Date.now() - lastFetch < 20 * 60 * 60 * 1000) return json({ rate: existing, cached: true });
 
-    const [goldResp, fxResp] = await Promise.all([
-      fetch("https://stooq.com/q/l/?s=xauusd&f=sd2t2ohlcv&h&e=csv"),
-      fetch("https://open.er-api.com/v6/latest/USD"),
-    ]);
-    if (!goldResp.ok) throw new Error("Could not fetch today's gold market price.");
-    if (!fxResp.ok) throw new Error("Could not fetch today's currency rate.");
+    async function fetchXauUsd(): Promise<number> {
+      // Primary: gold-api.com (free, no key)
+      try {
+        const r = await fetch("https://api.gold-api.com/price/XAU");
+        if (r.ok) {
+          const j = await r.json();
+          const p = Number(j?.price);
+          if (Number.isFinite(p) && p > 0) return p;
+        }
+      } catch (_) { /* fall through */ }
+      // Fallback: Stooq CSV
+      const r = await fetch("https://stooq.com/q/l/?s=xauusd&f=sd2t2ohlcv&h&e=csv");
+      if (!r.ok) throw new Error("gold source unreachable");
+      const csv = await r.text();
+      const parts = csv.trim().split("\n")[1]?.split(",") ?? [];
+      const close = Number(parts[6]);
+      if (!Number.isFinite(close) || close <= 0) throw new Error("gold source returned no price");
+      return close;
+    }
 
-    const csv = await goldResp.text();
-    const lines = csv.trim().split("\n");
-    const parts = lines[1]?.split(",") ?? [];
-    const xauUsd = Number(parts[6]);
-    const fx = await fxResp.json();
-    const usdBdt = Number(fx?.rates?.BDT);
-    if (!Number.isFinite(xauUsd) || !Number.isFinite(usdBdt)) throw new Error("Gold market data was incomplete.");
+    async function fetchUsdBdt(): Promise<number> {
+      try {
+        const r = await fetch("https://open.er-api.com/v6/latest/USD");
+        if (r.ok) {
+          const j = await r.json();
+          const v = Number(j?.rates?.BDT);
+          if (Number.isFinite(v) && v > 0) return v;
+        }
+      } catch (_) { /* fall through */ }
+      const r = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
+      if (!r.ok) throw new Error("fx source unreachable");
+      const j = await r.json();
+      const v = Number(j?.rates?.BDT);
+      if (!Number.isFinite(v) || v <= 0) throw new Error("fx source returned no rate");
+      return v;
+    }
+
+    let xauUsd: number, usdBdt: number;
+    try {
+      [xauUsd, usdBdt] = await Promise.all([fetchXauUsd(), fetchUsdBdt()]);
+    } catch (err) {
+      console.error("gold rate fetch failed", err);
+      if (existing) return json({ rate: existing, cached: true, stale: true });
+      return json({ rate: null, error: "Gold rate temporarily unavailable.", fallback: true });
+    }
 
     const perGram = (xauUsd * usdBdt) / 31.1034768;
     const payload = {
@@ -53,6 +84,6 @@ Deno.serve(async (req) => {
     return json({ rate: data, cached: false });
   } catch (e) {
     console.error("update-gold-rate error", e);
-    return json({ error: e instanceof Error ? e.message : "Gold rate update failed." }, 500);
+    return json({ rate: null, error: e instanceof Error ? e.message : "Gold rate update failed.", fallback: true });
   }
 });
